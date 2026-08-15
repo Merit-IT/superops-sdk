@@ -1,8 +1,7 @@
 /**
- * Field selections here match what was confirmed live in at least one consumer project.
+ * Field selections here are general from what we have used in the past (Merit).
  * For anything narrower/wider than you need, use SuperOpsClient#query with your own selection
- * rather than editing these shared strings — keeps callers from silently changing each other's
- * field sets.
+ * rather than editing these shared strings
  */
 
 export const GET_CLIENT_LIST = /* GraphQL */ `
@@ -141,6 +140,48 @@ export const GET_SERVICE_CATEGORY_LIST = /* GraphQL */ `
     getServiceCategoryList {
       id
       name
+    }
+  }
+`;
+
+export const GET_INVOICE_LIST = /* GraphQL */ `
+  query GetInvoiceList($input: ListInfoInput) {
+    getInvoiceList(input: $input) {
+      invoices {
+        id
+        invoiceNumber
+        status
+        client {
+          accountId
+          name
+        }
+        billDate
+        dueDate
+        total
+      }
+      listInfo {
+        totalCount
+        page
+        pageSize
+        hasMore
+      }
+    }
+  }
+`;
+
+export const GET_INVOICE = /* GraphQL */ `
+  query GetInvoice($input: InvoiceIdentifierInput!) {
+    getInvoice(input: $input) {
+      id
+      invoiceNumber
+      status
+      client {
+        accountId
+        name
+      }
+      billDate
+      dueDate
+      total
     }
   }
 `;

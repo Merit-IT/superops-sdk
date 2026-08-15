@@ -64,10 +64,19 @@ export interface WorklogEntry {
   technician?: Pick<Technician, 'id' | 'name'>;
 }
 
+/**
+ * Best-effort shape — unlike Client/ClientContract/WorklogEntry/ServiceCatalogItem, invoice
+ * fields weren't confirmed against a live SuperOps response during the SDK audit. Verify
+ * against the live schema (or override via `query`) before relying on fields beyond `id`/`status`.
+ */
 export interface Invoice {
   id: string;
-  status?: string;
+  invoiceNumber?: string;
+  status?: InvoiceStatus | string;
   client?: Pick<Client, 'accountId' | 'name'>;
+  billDate?: string;
+  dueDate?: string;
+  total?: number;
   [extra: string]: unknown;
 }
 
