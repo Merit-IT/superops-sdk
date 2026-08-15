@@ -49,6 +49,32 @@ const contracts = await superops.listClientContracts({ pageSize: 50 });
 await superops.updateClientContract({ id: contractId, quantity: 5 });
 ```
 
+Every typed list/get/mutation method accepts an optional `query` override plus its own generic
+type parameter, so you're not stuck with the SDK's default field selection — the response
+envelope (`{ items, listInfo }` vs bare array) has to stay the same shape, but which fields come
+back inside it is entirely up to you:
+
+```ts
+interface MyContract {
+  id: string;
+  changes: { type: string; quantity: number }[];
+}
+
+const contracts = await superops.listClientContracts<MyContract>(undefined, {
+  query: `
+    query GetClientContractList($input: ListInfoInput) {
+      getClientContractList(input: $input) {
+        contracts { id changes { type quantity } }
+        listInfo { totalCount page pageSize hasMore }
+      }
+    }
+  `,
+});
+```
+
+Cache keys automatically fold in the overridden query, so a custom field selection never
+collides with (or gets served from) a cache entry built from the default one.
+
 Multi-tenant (per-request credentials):
 
 ```ts

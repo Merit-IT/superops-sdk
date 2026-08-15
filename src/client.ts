@@ -39,6 +39,18 @@ export interface SuperOpsClientConfig {
 
 const DEFAULT_API_URL = 'https://api.superops.ai/msp';
 
+/**
+ * Options shared by every typed list/get method: `query` swaps the field selection (the
+ * response envelope shape — e.g. `{ items, listInfo }` vs bare array — must stay the same),
+ * and the method's own generic type parameter lets you type the result to match. Useful when
+ * the built-in field set is wider or narrower than what your app actually needs.
+ */
+interface ReadOpts {
+  ttlMs?: number;
+  errorPolicy?: ExecuteOptions['errorPolicy'];
+  query?: string;
+}
+
 export class SuperOpsClient {
   private readonly http: HttpExecutor;
   private readonly cache: CacheService | null;
@@ -81,45 +93,52 @@ export class SuperOpsClient {
     this.cache?.delete(key);
   }
 
+  /**
+   * Cache keys fold in the query string whenever it's overridden, so a custom field selection
+   * never collides with (or gets served) a cache entry built from the default one.
+   */
+  private cacheKey(base: string, input: unknown, query?: string): string {
+    return query ? `${base}:${JSON.stringify(input ?? {})}:custom:${hash(query)}` : `${base}:${JSON.stringify(input ?? {})}`;
+  }
+
   // ---- Clients ----------------------------------------------------------
 
-  async listClients(
-    input?: ListInfoInput,
-    opts: { ttlMs?: number; errorPolicy?: ExecuteOptions['errorPolicy'] } = {},
-  ): Promise<Client[]> {
-    const key = `superops:clients:${JSON.stringify(input ?? {})}`;
+  async listClients<T = Client>(input?: ListInfoInput, opts: ReadOpts = {}): Promise<T[]> {
+    const key = this.cacheKey('superops:clients', input, opts.query);
     return this.cached(key, opts.ttlMs, () =>
-      fetchAllPages<Client>(
-        async (page) => {
-          const res = await this.http.execute<{ getClientList: { clients: Client[]; listInfo: WrappedListResponse<Client>['listInfo'] } }>(
-            GQL.GET_CLIENT_LIST,
-            { input: { ...input, page } },
-            { errorPolicy: opts.errorPolicy },
-          );
-          return { items: res.getClientList.clients, listInfo: res.getClientList.listInfo };
-        },
-      ),
+      fetchAllPages<T>(async (page) => {
+        const res = await this.http.execute<{ getClientList: { clients: T[]; listInfo: WrappedListResponse<T>['listInfo'] } }>(
+          opts.query ?? GQL.GET_CLIENT_LIST,
+          { input: { ...input, page } },
+          { errorPolicy: opts.errorPolicy },
+        );
+        return { items: res.getClientList.clients, listInfo: res.getClientList.listInfo };
+      }),
     );
   }
 
-  async *iterateClients(input?: ListInfoInput): AsyncGenerator<Client[], void, void> {
-    yield* iteratePages<Client>(async (page) => {
-      const res = await this.http.execute<{ getClientList: { clients: Client[]; listInfo: WrappedListResponse<Client>['listInfo'] } }>(
-        GQL.GET_CLIENT_LIST,
+  async *iterateClients<T = Client>(
+    input?: ListInfoInput,
+    opts: Pick<ReadOpts, 'errorPolicy' | 'query'> = {},
+  ): AsyncGenerator<T[], void, void> {
+    yield* iteratePages<T>(async (page) => {
+      const res = await this.http.execute<{ getClientList: { clients: T[]; listInfo: WrappedListResponse<T>['listInfo'] } }>(
+        opts.query ?? GQL.GET_CLIENT_LIST,
         { input: { ...input, page } },
+        { errorPolicy: opts.errorPolicy },
       );
       return { items: res.getClientList.clients, listInfo: res.getClientList.listInfo };
     });
   }
 
-  async getClient(
+  async getClient<T = Client>(
     accountId: string,
-    opts: { errorPolicy?: ExecuteOptions['errorPolicy'] } = {},
-  ): Promise<Client> {
-    const key = `superops:client:${accountId}`;
+    opts: Pick<ReadOpts, 'errorPolicy' | 'query'> = {},
+  ): Promise<T> {
+    const key = this.cacheKey('superops:client', accountId, opts.query);
     return this.cached(key, undefined, async () => {
-      const res = await this.http.execute<{ getClient: Client }>(
-        GQL.GET_CLIENT,
+      const res = await this.http.execute<{ getClient: T }>(
+        opts.query ?? GQL.GET_CLIENT,
         { input: { accountId } },
         { errorPolicy: opts.errorPolicy },
       );
@@ -129,17 +148,17 @@ export class SuperOpsClient {
 
   // ---- Contracts ----------------------------------------------------------
 
-  async listClientContracts(
+  async listClientContracts<T = ClientContract>(
     input?: ListInfoInput,
-    opts: { ttlMs?: number; errorPolicy?: ExecuteOptions['errorPolicy'] } = {},
-  ): Promise<ClientContract[]> {
-    const key = `superops:contracts:${JSON.stringify(input ?? {})}`;
+    opts: ReadOpts = {},
+  ): Promise<T[]> {
+    const key = this.cacheKey('superops:contracts', input, opts.query);
     return this.cached(key, opts.ttlMs, () =>
-      fetchAllPages<ClientContract>(async (page) => {
+      fetchAllPages<T>(async (page) => {
         const res = await this.http.execute<{
-          getClientContractList: { contracts: ClientContract[]; listInfo: WrappedListResponse<ClientContract>['listInfo'] };
+          getClientContractList: { contracts: T[]; listInfo: WrappedListResponse<T>['listInfo'] };
         }>(
-          GQL.GET_CLIENT_CONTRACT_LIST,
+          opts.query ?? GQL.GET_CLIENT_CONTRACT_LIST,
           { input: { ...input, page } },
           { errorPolicy: opts.errorPolicy },
         );
@@ -148,28 +167,32 @@ export class SuperOpsClient {
     );
   }
 
-  async updateClientContract(input: Record<string, unknown>): Promise<ClientContract> {
-    const res = await this.http.execute<{ updateClientContract: ClientContract }>(
-      GQL.UPDATE_CLIENT_CONTRACT,
+  async updateClientContract<T = ClientContract>(
+    input: Record<string, unknown>,
+    opts: { errorPolicy?: ExecuteOptions['errorPolicy']; query?: string } = {},
+  ): Promise<T> {
+    const res = await this.http.execute<{ updateClientContract: T }>(
+      opts.query ?? GQL.UPDATE_CLIENT_CONTRACT,
       { input },
+      { errorPolicy: opts.errorPolicy },
     );
-    this.invalidate(`superops:contracts:${JSON.stringify({})}`);
+    this.invalidate('superops:contracts:{}');
     return res.updateClientContract;
   }
 
   // ---- Worklogs ----------------------------------------------------------
 
-  async listWorklogEntries(
+  async listWorklogEntries<T = WorklogEntry>(
     input?: ListInfoInput,
-    opts: { ttlMs?: number; errorPolicy?: ExecuteOptions['errorPolicy'] } = {},
-  ): Promise<WorklogEntry[]> {
-    const key = `superops:worklogs:${JSON.stringify(input ?? {})}`;
+    opts: ReadOpts = {},
+  ): Promise<T[]> {
+    const key = this.cacheKey('superops:worklogs', input, opts.query);
     return this.cached(key, opts.ttlMs, () =>
-      fetchAllPages<WorklogEntry>(async (page) => {
+      fetchAllPages<T>(async (page) => {
         const res = await this.http.execute<{
-          getWorklogEntries: { items: WorklogEntry[]; listInfo: WrappedListResponse<WorklogEntry>['listInfo'] };
+          getWorklogEntries: { items: T[]; listInfo: WrappedListResponse<T>['listInfo'] };
         }>(
-          GQL.GET_WORKLOG_ENTRIES,
+          opts.query ?? GQL.GET_WORKLOG_ENTRIES,
           { input: { ...input, page } },
           { errorPolicy: opts.errorPolicy },
         );
@@ -180,17 +203,17 @@ export class SuperOpsClient {
 
   // ---- Service catalog ----------------------------------------------------
 
-  async listServiceCatalogItems(
+  async listServiceCatalogItems<T = ServiceCatalogItem>(
     input?: ListInfoInput,
-    opts: { ttlMs?: number; errorPolicy?: ExecuteOptions['errorPolicy'] } = {},
-  ): Promise<ServiceCatalogItem[]> {
-    const key = `superops:catalog:${JSON.stringify(input ?? {})}`;
+    opts: ReadOpts = {},
+  ): Promise<T[]> {
+    const key = this.cacheKey('superops:catalog', input, opts.query);
     return this.cached(key, opts.ttlMs, () =>
-      fetchAllPages<ServiceCatalogItem>(async (page) => {
+      fetchAllPages<T>(async (page) => {
         const res = await this.http.execute<{
-          getServiceCatalogItemList: { items: ServiceCatalogItem[]; listInfo: WrappedListResponse<ServiceCatalogItem>['listInfo'] };
+          getServiceCatalogItemList: { items: T[]; listInfo: WrappedListResponse<T>['listInfo'] };
         }>(
-          GQL.GET_SERVICE_CATALOG_ITEM_LIST,
+          opts.query ?? GQL.GET_SERVICE_CATALOG_ITEM_LIST,
           { input: { ...input, page } },
           { errorPolicy: opts.errorPolicy },
         );
@@ -199,25 +222,27 @@ export class SuperOpsClient {
     );
   }
 
-  async createServiceCatalogItem(input: CreateServiceCatalogItemInput): Promise<ServiceCatalogItem> {
-    const res = await this.http.execute<{ createServiceCatalogItem: ServiceCatalogItem }>(
-      GQL.CREATE_SERVICE_CATALOG_ITEM,
+  async createServiceCatalogItem<T = ServiceCatalogItem>(
+    input: CreateServiceCatalogItemInput,
+    opts: { errorPolicy?: ExecuteOptions['errorPolicy']; query?: string } = {},
+  ): Promise<T> {
+    const res = await this.http.execute<{ createServiceCatalogItem: T }>(
+      opts.query ?? GQL.CREATE_SERVICE_CATALOG_ITEM,
       { input },
+      { errorPolicy: opts.errorPolicy },
     );
-    this.invalidate(`superops:catalog:${JSON.stringify({})}`);
+    this.invalidate('superops:catalog:{}');
     return res.createServiceCatalogItem;
   }
 
   /** Bare array, no pagination — SuperOps has no `input`/`listInfo` for this one. */
-  async listServiceCategories(
-    opts: { ttlMs?: number; errorPolicy?: ExecuteOptions['errorPolicy'] } = {},
-  ): Promise<ServiceCategory[]> {
-    const key = 'superops:categories';
+  async listServiceCategories<T = ServiceCategory>(opts: ReadOpts = {}): Promise<T[]> {
+    const key = this.cacheKey('superops:categories', undefined, opts.query);
     return this.cached(key, opts.ttlMs, () =>
-      fetchAllPages<ServiceCategory>(
+      fetchAllPages<T>(
         async () => {
-          const res = await this.http.execute<{ getServiceCategoryList: ServiceCategory[] }>(
-            GQL.GET_SERVICE_CATEGORY_LIST,
+          const res = await this.http.execute<{ getServiceCategoryList: T[] }>(
+            opts.query ?? GQL.GET_SERVICE_CATEGORY_LIST,
             undefined,
             { errorPolicy: opts.errorPolicy },
           );
@@ -230,10 +255,26 @@ export class SuperOpsClient {
 
   // ---- Invoices ------------------------------------------------------------
 
-  async createInvoice(input: CreateInvoiceInput): Promise<Invoice> {
-    const res = await this.http.execute<{ createInvoice: Invoice }>(GQL.CREATE_INVOICE, { input });
+  async createInvoice<T = Invoice>(
+    input: CreateInvoiceInput,
+    opts: { errorPolicy?: ExecuteOptions['errorPolicy']; query?: string } = {},
+  ): Promise<T> {
+    const res = await this.http.execute<{ createInvoice: T }>(
+      opts.query ?? GQL.CREATE_INVOICE,
+      { input },
+      { errorPolicy: opts.errorPolicy },
+    );
     return res.createInvoice;
   }
+}
+
+/** Small, fast, non-cryptographic string hash — just needs to disambiguate cache keys. */
+function hash(s: string): string {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) {
+    h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+  }
+  return (h >>> 0).toString(36);
 }
 
 export function createSuperOpsClient(config: SuperOpsClientConfig): SuperOpsClient {
