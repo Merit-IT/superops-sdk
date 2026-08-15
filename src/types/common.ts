@@ -1,0 +1,72 @@
+export type StringOperator =
+  | 'EQUALS'
+  | 'NOT_EQUALS'
+  | 'CONTAINS'
+  | 'NOT_CONTAINS'
+  | 'STARTS_WITH'
+  | 'ENDS_WITH'
+  | 'IN'
+  | 'NOT_IN'
+  | 'IS_EMPTY'
+  | 'IS_NOT_EMPTY';
+
+export type NumberOperator =
+  | 'EQUALS'
+  | 'NOT_EQUALS'
+  | 'GREATER_THAN'
+  | 'LESS_THAN'
+  | 'GREATER_THAN_OR_EQUALS'
+  | 'LESS_THAN_OR_EQUALS'
+  | 'IN'
+  | 'NOT_IN';
+
+export type DateTimeOperator =
+  | 'ON'
+  | 'BEFORE'
+  | 'AFTER'
+  | 'BETWEEN'
+  | 'CONTAINS';
+
+export type BooleanOperator = 'EQUALS';
+
+export interface Operands {
+  string?: string[];
+  number?: number[];
+  boolean?: boolean;
+  dateTime?: string[];
+}
+
+/** A single filter condition against a SuperOps list query. */
+export interface RuleConditionInput {
+  attribute: string;
+  operator: StringOperator | NumberOperator | DateTimeOperator | BooleanOperator;
+  operands: Operands;
+}
+
+export interface SortInput {
+  attribute: string;
+  direction: 'ASC' | 'DESC';
+}
+
+/** Pagination input accepted by most (but not all — see README) SuperOps get*List queries. */
+export interface ListInfoInput {
+  page?: number;
+  pageSize?: number;
+  condition?: RuleConditionInput;
+  sort?: SortInput;
+}
+
+/** Pagination metadata returned by most (but not all) SuperOps get*List queries. */
+export interface ListInfo {
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+}
+
+/** Common identifier shape used by SuperOps `*IdentifierInput` types (e.g. ClientIdentifierInput). */
+export interface Identifier {
+  accountId?: string;
+  itemId?: string;
+  id?: string;
+}
