@@ -1,6 +1,6 @@
-# SUPEROPS-SDK
+# SuperOps-SDK
 
-TypeScript SDK wrapping the SuperOps PSA GraphQL API (`https://api.superops.ai/msp`)
+TypeScript SDK wrapping the SuperOps PSA GraphQL API (`https://api.superops.ai/msp`). Only in initial versions wrapped endpoints we use for our various internal functions and services. 
 
 ## Features
 
