@@ -38,16 +38,22 @@ export interface HttpExecutorOptions {
   retry?: RetryOptions;
   /**
    * Default GraphQL error policy for calls that don't override it:
-   * 'throw' (default) rejects when `errors[]` is present, even if `data` is also present.
-   * 'tolerant' returns `data` and ignores `errors[]` as long as `data` is non-null (matches
-   * the behavior consumers had converged on for read paths that can return partial results).
+   * 'throw' (default) rejects when `errors[]` is present, even if `data` is also present. SuperOps' GraphQL API is inconsistent about returning partial data vs errors, so this is the safest default.
+   * 'tolerant' returns `data` and ignores `errors[]` as long as `data` is non-null (matches the behavior consumers had converged on for read paths that can return partial results).
    */
   defaultErrorPolicy?: 'throw' | 'tolerant';
+  /**
+   * Client-wide default for retrying GraphQL-level execution errors (HTTP 200 with an
+   * `errors[]` array — e.g. `{ "message": "Internal Server Error(s) while executing query" }`). 
+   */
+  defaultRetryOnGraphQLError?: (errors: GraphQLError[]) => boolean;
 }
 
 export interface ExecuteOptions {
   errorPolicy?: 'throw' | 'tolerant';
   signal?: AbortSignal;
+  /** Per-call override for `defaultRetryOnGraphQLError`. */
+  retryOnGraphQLError?: (errors: GraphQLError[]) => boolean;
 }
 
 const RETRYABLE_STATUS = new Set([429, 502, 503, 504]);
@@ -65,6 +71,7 @@ export class HttpExecutor {
   private readonly retry: Required<RetryOptions>;
   private readonly timeoutMs: number;
   private readonly defaultErrorPolicy: 'throw' | 'tolerant';
+  private readonly defaultRetryOnGraphQLError?: (errors: GraphQLError[]) => boolean;
 
   constructor(private readonly opts: HttpExecutorOptions) {
     this.retry = {
@@ -74,6 +81,7 @@ export class HttpExecutor {
     };
     this.timeoutMs = opts.timeoutMs ?? 30_000;
     this.defaultErrorPolicy = opts.defaultErrorPolicy ?? 'throw';
+    this.defaultRetryOnGraphQLError = opts.defaultRetryOnGraphQLError;
   }
 
   async execute<T>(
@@ -82,6 +90,7 @@ export class HttpExecutor {
     options: ExecuteOptions = {},
   ): Promise<T> {
     const errorPolicy = options.errorPolicy ?? this.defaultErrorPolicy;
+    const retryOnGraphQLError = options.retryOnGraphQLError ?? this.defaultRetryOnGraphQLError;
     let lastError: unknown;
 
     for (let attempt = 0; attempt < this.retry.maxAttempts; attempt++) {
@@ -120,6 +129,13 @@ export class HttpExecutor {
         const body = (await res.json()) as GraphQLResponse<T>;
 
         if (body.errors?.length) {
+          if (
+            attempt < this.retry.maxAttempts - 1 &&
+            retryOnGraphQLError?.(body.errors)
+          ) {
+            await sleep(backoffDelay(attempt, this.retry));
+            continue;
+          }
           if (errorPolicy === 'tolerant' && body.data != null) {
             return body.data;
           }
@@ -151,6 +167,15 @@ export class HttpExecutor {
 
 function isNetworkError(err: unknown): boolean {
   return err instanceof TypeError;
+}
+
+/**
+ * Matches SuperOps' generic "Internal Server Error(s) while executing query" message — the
+ * shape its due to 200 OK with errors only returned. Pass as `retryOnGraphQLError` (client-wide or per-call) to retry those
+ * automatically: `{ retryOnGraphQLError: isTransientSuperOpsError }`.
+ */
+export function isTransientSuperOpsError(errors: GraphQLError[]): boolean {
+  return errors.some((e) => /internal server error/i.test(e.message));
 }
 
 function mergeSignals(a: AbortSignal, b: AbortSignal): AbortSignal {

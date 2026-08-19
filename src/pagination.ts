@@ -8,7 +8,7 @@ export interface WrappedListResponse<T> {
 /**
  * Streams every page of a `get*List` query, one page at a time. 
  *
- * Consumers control how much to fetch simply by how long they keep iterating — `break` out of
+ * Consuming app control how much to fetch simply by how long they keep iterating — `break` out of
  * a `for await` early and no further pages are requested. Use `toArray()` below if you want the
  * whole thing buffered into one array instead of streamed.
  */

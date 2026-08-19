@@ -1,7 +1,7 @@
 export { SuperOpsClient, createSuperOpsClient } from './client';
 export type { SuperOpsClientConfig, AuthResolver } from './client';
 
-export { HttpExecutor, SuperOpsGraphQLError } from './http';
+export { HttpExecutor, SuperOpsGraphQLError, isTransientSuperOpsError } from './http';
 export type { GraphQLError, GraphQLResponse, RetryOptions, ExecuteOptions } from './http';
 
 export { CacheService, MemoryCacheStore } from './cache';

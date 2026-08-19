@@ -10,7 +10,7 @@ interface Entry {
   expiresAt: number;
 }
 
-/** In-memory TTL store, same pattern software-audit and quoter-middleware had independently built. */
+/** In-memory TTL store */
 export class MemoryCacheStore implements CacheStore {
   private readonly store = new Map<string, Entry>();
 
@@ -43,8 +43,7 @@ export interface CacheOptions {
 }
 
 /**
- * TTL cache with in-flight request de-duplication: concurrent callers for the same key share one
- * outstanding fetch instead of firing duplicate SuperOps requests.
+ * TTL cache with in-flight request de-duplication: concurrent callers for the same key share
  */
 export class CacheService {
   private readonly store: CacheStore;

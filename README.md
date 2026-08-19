@@ -1,10 +1,49 @@
-# SuperOps-SDK
+# SUPEROPS-SDK
+### TypeScript SDK wrapping the SuperOps PSA GraphQL API (`https://api.superops.ai/msp`)
+- Only in initial version we wrapped endpoints we use for our various internal functions and services.
+- Anything not yet wrapped as a typed method — use the escape hatch:
 
-TypeScript SDK wrapping the SuperOps PSA GraphQL API (`https://api.superops.ai/msp`). Only in initial versions wrapped endpoints we use for our various internal functions and services. 
+```ts
+const data = await superops.query(`query { getTaskList { id } }`);
+```
+
+## Coverage
+
+What's wrapped as a typed method today
+
+| Entity | Read | Write 
+|---|---|---|
+| Client | `iterateClients`, `getClient` | — 
+| ClientUser | `iterateClientUsers`, `getClientUser` | — |
+| ClientSite | `getClientSite` | — |
+| CustomField | `listClientCustomFields`, `getClientCustomField` | — |
+| ClientContract | `iterateClientContracts`, `getClientContract` | `updateClientContract` |
+| WorklogEntry | `iterateWorklogEntries` | — | 
+| ServiceCatalogItem | `iterateServiceCatalogItems` | `createServiceCatalogItem` | 
+| ServiceCategory | `listServiceCategories` | — |
+| Invoice | `iterateInvoices`, `getInvoice` | `createInvoice` | 
+| InvoiceItem | `iterateInvoiceItems` | — |
+| Ticket | `iterateTickets` | — |
+| Note (ticket notes) | `listTicketNotes` | — |
+| Technician | `iterateTechnicians` | — |
+| Tax | `iterateTaxes`, `getTax` | — |
+| WorkStatus | `listWorkStatuses` | — |
+| Urgency | `listUrgencies` | — |
+| Category | `listCategories` | — |
+| SLA | `listSLAs` | — |
+| OfferedItem | `iterateOfferedItems` | — |
+| Task | `iterateTasks` | — |
+| ServiceItem ⚠️ | `iterateServiceItems`, `getServiceItem` | — |
+| TicketConversation | `listTicketConversations` | — |
+
+⚠️ **`ServiceItem` (SuperOps' own "Service Items (Legacy)" endpoint) is real flaky. Our Tickets to support have them acknowledging but no planned fix**
 
 ## Features
 
-- **Retry/backoff** on 429/502/503/504 and network errors, honoring `Retry-After`.
+- **Retry/backoff** on 429/502/503/504 and network errors, honoring `Retry-After` — plus opt-in
+  retry on GraphQL-level execution errors (`retryOnGraphQLError`) for endpoints like SuperOps'
+  known-flaky "Service Items (Legacy)" one, which fails with HTTP 200 + `errors[]`, a failure mode
+  the HTTP-status retry never catches. See "Retrying flaky GraphQL errors" below.
 - **Streaming pagination** via async generators (`iterateClients`, etc.) that handle both
   response shapes SuperOps actually returns: most `get*List` queries wrap results as
   `{ items, listInfo }`, but a few (`getServiceCategoryList`, `getWorkStatusList`,
@@ -24,7 +63,7 @@ TypeScript SDK wrapping the SuperOps PSA GraphQL API (`https://api.superops.ai/m
 
 ## Install
 
-Consumers need a GitHub Packages auth token (a PAT with `read:packages`) in their `.npmrc`:
+Consuming apps need a GitHub Packages auth token (a PAT with `read:packages`) in their `.npmrc`:
 
 ```
 @merit-it:registry=https://npm.pkg.github.com
@@ -50,7 +89,14 @@ for await (const page of superops.iterateClients()) {
   console.log(page.length, 'clients in this page');
 }
 
-await superops.updateClientContract({ id: contractId, quantity: 5 });
+const updatedId = await superops.updateClientContract({
+  contract: {
+    contractId,
+    billableContract: {
+      change: { quantity: '5', quantityChangeOperation: 'INCREASE', effectiveDate: '2026-01-01' },
+    },
+  },
+});
 ```
 
 ### Pagination
@@ -74,26 +120,22 @@ const allContracts = await toArray(superops.iterateClientContracts());
 const firstThreePages = await toArray(superops.iterateClients(), { maxPages: 3 });
 ```
 
-### Invoices
+### Filtering Example Usage
 
 ```ts
-// All invoices for the logged-in client (clientPortal scopes this by resolving accountId
-// server-side and passing it as a condition, same as it does today).
+// All invoices 
 const invoices = await toArray(superops.iterateInvoices());
 
-// Overdue only — one condition instead of a second bespoke query/near-duplicate field set.
+// Overdue only
 const overdue = await toArray(
   superops.iterateInvoices({
-    condition: { attribute: 'status', operator: 'EQUALS', operands: { string: ['OVERDUE'] } },
+    condition: { attribute: 'statusEnum', operator: 'EQUALS', operands: { string: ['OVERDUE'] } },
   }),
 );
 
 const invoice = await superops.getInvoice(invoiceId);
 ```
 
-`Invoice` fields beyond `id`/`status` are best-effort (see "Design notes" below) — verify
-`invoiceNumber`/`billDate`/`dueDate`/`total` against the live schema, or pass your own `query`
-override if they don't match.
 
 ### Overriding the default field selection
 
@@ -104,15 +146,15 @@ inside it is entirely up to you:
 
 ```ts
 interface MyContract {
-  id: string;
-  changes: { type: string; quantity: number }[];
+  contractId: string;
+  contractStatus: string;
 }
 
 for await (const page of superops.iterateClientContracts<MyContract>(undefined, {
   query: `
     query GetClientContractList($input: ListInfoInput) {
       getClientContractList(input: $input) {
-        contracts { id changes { type quantity } }
+        clientContracts { contractId contractStatus }
         listInfo { totalCount page pageSize hasMore }
       }
     }
@@ -140,24 +182,30 @@ const clients = await cache.getOrSet('superops:clients', () =>
 
 // After a mutation, invalidate whatever keys your app actually populated —
 // you know your own filters/pagination, the SDK doesn't guess for you.
-await superops.updateClientContract({ id: contractId, quantity: 5 });
+await superops.updateClientContract({ contract: { /* ... */ } });
 cache.delete('superops:contracts');
 ```
 
-Multi-tenant (per-request credentials):
+### Retrying flaky GraphQL errors
+
+SuperOps' HTTP-status retry (429/502/503/504) doesn't fire for a GraphQL-level failure — an
+HTTP-200 response with an `errors[]` array, which is exactly how their
+`getServiceItemList`/`getServiceItem` endpoint fails. `retryOnGraphQLError` (client-wide default
+or per-call override) fills that gap — pass a predicate over the error messages, and it retries
+with the same backoff as everything else:
 
 ```ts
+import { createSuperOpsClient, isTransientSuperOpsError } from '@merit-it/superops-sdk';
+
+// Client-wide default:
 const superops = createSuperOpsClient({
-  resolveAuth: () => ({ apiKey: getApiKeyForCurrentRequest(), subdomain: 'my-msp' }),
+  apiKey: process.env.SUPEROPS_BEARER_TOKEN!,
+  subdomain: process.env.SUPEROPS_SUBDOMAIN!,
+  defaultRetryOnGraphQLError: isTransientSuperOpsError,
 });
+
+// Or per-call, if you only want it for the known-flaky operations:
+const serviceItems = await toArray(
+  superops.iterateServiceItems(undefined, { retryOnGraphQLError: isTransientSuperOpsError }),
+);
 ```
-
-Anything not yet wrapped as a typed method — use the escape hatch:
-
-```ts
-const data = await superops.query(`query { getTaskList { id } }`);
-```
-
-## Design notes / known gaps
-
-This was scaffolded from an audit of what we use with superops, mainly the PSA. 
