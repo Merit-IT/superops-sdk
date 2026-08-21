@@ -465,6 +465,7 @@ export const GET_TICKET_LIST = /* GraphQL */ `
         subcause
         resolutionCode
         resolutionTime
+        firstResponseTime
         createdTime
         updatedTime
         customFields
