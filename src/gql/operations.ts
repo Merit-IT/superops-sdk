@@ -241,7 +241,7 @@ export const GET_SERVICE_CATEGORY_LIST = /* GraphQL */ `
 `;
 
 export const GET_INVOICE_LIST = /* GraphQL */ `
-  query GetInvoiceList($input: ListInfoInput) {
+  query GetInvoiceList($input: ListInfoInput!) {
     getInvoiceList(input: $input) {
       invoices {
         invoiceId
@@ -420,7 +420,7 @@ export const CREATE_INVOICE = /* GraphQL */ `
 `;
 
 export const GET_TICKET_LIST = /* GraphQL */ `
-  query GetTicketList($input: ListInfoInput) {
+  query GetTicketList($input: ListInfoInput!) {
     getTicketList(input: $input) {
       tickets {
         ticketId
@@ -609,7 +609,7 @@ export const GET_SLA_LIST = /* GraphQL */ `
 `;
 
 export const GET_OFFERED_ITEMS = /* GraphQL */ `
-  query GetOfferedItems($input: ListInfoInput) {
+  query GetOfferedItems($input: ListInfoInput!) {
     getOfferedItems(input: $input) {
       items {
         itemId
