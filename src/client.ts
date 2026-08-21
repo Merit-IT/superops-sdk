@@ -252,7 +252,9 @@ export class SuperOpsClient {
       { input },
       { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
     );
-    return res.getTicketList;
+    // The envelope itself, or its `tickets` field specifically, can independently resolve
+    // to null in a valid, error-free response — guarantee the declared return shape either way.
+    return { tickets: res.getTicketList?.tickets ?? [], listInfo: res.getTicketList?.listInfo ?? EMPTY_LIST_INFO };
   }
 
   /** Bare array for one ticket, no pagination. */
@@ -411,7 +413,9 @@ export class SuperOpsClient {
       { input },
       { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
     );
-    return res.getInvoiceList;
+    // The envelope itself, or its `invoices` field specifically, can independently resolve
+    // to null in a valid, error-free response — guarantee the declared return shape either way.
+    return { invoices: res.getInvoiceList?.invoices ?? [], listInfo: res.getInvoiceList?.listInfo ?? EMPTY_LIST_INFO };
   }
 
   async getInvoice<T = Invoice>(invoiceId: string, opts: CallOpts = {}): Promise<T> {
