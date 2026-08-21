@@ -47,7 +47,8 @@ export interface RuleConditionInput {
 export interface ConditionOperand {
   attribute: string;
   operator: string;
-  value: string;
+  /** A bare string for most operators; an array for `includes`/`notIncludes` (both verified working). */
+  value: string | string[];
 }
 
 /**
