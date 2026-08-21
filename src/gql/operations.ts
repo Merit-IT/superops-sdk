@@ -167,55 +167,59 @@ export const GET_WORKLOG_ENTRIES = /* GraphQL */ `
 `;
 
 /** `serviceTypeItem.bundledItems` is kept shallow to avoid an unbounded circular selection. */
+const SERVICE_CATALOG_ITEM_FIELDS = /* GraphQL */ `
+  itemId
+  name
+  description
+  category {
+    categoryId
+    name
+  }
+  itemType
+  offerAsWorklogItem
+  status
+  taxable
+  taxCategory
+  sellingPrice {
+    model
+    details {
+      value
+      afterHoursValue
+    }
+  }
+  costPrice {
+    model
+    details {
+      value
+      afterHoursValue
+    }
+  }
+  serviceTypeItem {
+    itemId
+    offeringType
+    bundledItems {
+      itemId
+      name
+    }
+    hourlyServiceTypeItem {
+      itemId
+      roundUpValue
+      defaultItem
+    }
+    redeemableServiceBundle {
+      itemId
+      applicableType
+      applicableHours
+      redeemableQuantity
+    }
+  }
+`;
+
 export const GET_SERVICE_CATALOG_ITEM_LIST = /* GraphQL */ `
   query GetServiceCatalogItemList($input: ListInfoInput) {
     getServiceCatalogItemList(input: $input) {
       items {
-        itemId
-        name
-        description
-        category {
-          categoryId
-          name
-        }
-        itemType
-        offerAsWorklogItem
-        status
-        taxable
-        taxCategory
-        sellingPrice {
-          model
-          details {
-            value
-            afterHoursValue
-          }
-        }
-        costPrice {
-          model
-          details {
-            value
-            afterHoursValue
-          }
-        }
-        serviceTypeItem {
-          itemId
-          offeringType
-          bundledItems {
-            itemId
-            name
-          }
-          hourlyServiceTypeItem {
-            itemId
-            roundUpValue
-            defaultItem
-          }
-          redeemableServiceBundle {
-            itemId
-            applicableType
-            applicableHours
-            redeemableQuantity
-          }
-        }
+        ${SERVICE_CATALOG_ITEM_FIELDS}
       }
       listInfo {
         totalCount
@@ -223,6 +227,14 @@ export const GET_SERVICE_CATALOG_ITEM_LIST = /* GraphQL */ `
         pageSize
         hasMore
       }
+    }
+  }
+`;
+
+export const GET_SERVICE_CATALOG_ITEM = /* GraphQL */ `
+  query GetServiceCatalogItem($input: ServiceCatalogItemIdentifierInput!) {
+    getServiceCatalogItem(input: $input) {
+      ${SERVICE_CATALOG_ITEM_FIELDS}
     }
   }
 `;

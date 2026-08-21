@@ -19,7 +19,7 @@ What's wrapped as a typed method today
 | CustomField | `listClientCustomFields`, `getClientCustomField` | — |
 | ClientContract | `iterateClientContracts`, `getClientContract` | `updateClientContract` |
 | WorklogEntry | `iterateWorklogEntries` | — | 
-| ServiceCatalogItem | `iterateServiceCatalogItems` | `createServiceCatalogItem` | 
+| ServiceCatalogItem | `iterateServiceCatalogItems`, `getServiceCatalogItem` | `createServiceCatalogItem` | 
 | ServiceCategory | `listServiceCategories` | — |
 | Invoice | `iterateInvoices`, `getInvoicesPage`, `getInvoice` | `createInvoice` | 
 | InvoiceItem | `iterateInvoiceItems` | — |

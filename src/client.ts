@@ -302,17 +302,21 @@ export class SuperOpsClient {
 
   // ---- Worklogs ----------------------------------------------------------
 
-  /** `getWorklogEntries` takes its own `GetWorklogEntriesInput!` — pagination/condition nest under `listInfo`. */
+  /**
+   * `getWorklogEntries` takes its own `GetWorklogEntriesInput!` — pagination/condition nest
+   * under `listInfo`, with `module` (`'TICKET' | 'PROJECT'`) as a sibling key.
+   */
   async *iterateWorklogEntries<T = WorklogEntry>(
-    input?: ListInfoInput,
+    input?: ListInfoInput & { module?: string },
     opts: CallOpts = {},
   ): AsyncGenerator<T[], void, void> {
+    const { module, ...listInfo } = input ?? {};
     yield* iteratePages<T>(async (page) => {
       const res = await this.http.execute<{
         getWorklogEntries: { entries: T[]; listInfo: WrappedListResponse<T>['listInfo'] };
       }>(
         opts.query ?? GQL.GET_WORKLOG_ENTRIES,
-        { input: { listInfo: { ...input, page } } },
+        { input: { module, listInfo: { ...listInfo, page } } },
         { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
       );
       return { items: res.getWorklogEntries?.entries ?? [], listInfo: res.getWorklogEntries?.listInfo ?? EMPTY_LIST_INFO };
@@ -347,6 +351,15 @@ export class SuperOpsClient {
       { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
     );
     return res.createServiceCatalogItem;
+  }
+
+  async getServiceCatalogItem<T = ServiceCatalogItem>(itemId: string, opts: CallOpts = {}): Promise<T> {
+    const res = await this.http.execute<{ getServiceCatalogItem: T }>(
+      opts.query ?? GQL.GET_SERVICE_CATALOG_ITEM,
+      { input: { itemId } },
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.getServiceCatalogItem;
   }
 
   /** Bare array, no pagination — SuperOps has no `input`/`listInfo` for this one, so it's a plain fetch. */
