@@ -56,9 +56,9 @@ export interface ConditionOperand {
   /**
    * A bare string for most operators; an array for `includes`/`notIncludes`; a
    * `RelativeDateValue` for relative date/time operators like `inNext`/`inLast`
-   * (all verified working).
+   * (all verified working). Omitted entirely for `isEmpty`/`isNotEmpty`, which carry no value.
    */
-  value: string | string[] | number | boolean | RelativeDateValue;
+  value?: string | string[] | number | boolean | RelativeDateValue;
 }
 
 /**
@@ -71,7 +71,7 @@ export interface ConditionOperand {
 export interface JoinedConditionInput {
   /** Optional — omitted for a single-operand condition where there's nothing to join. */
   joinOperator?: 'AND' | 'OR';
-  operands: (ConditionOperand | JoinedConditionInput)[];
+  operands?: (ConditionOperand | JoinedConditionInput)[];
 }
 
 export interface SortInput {
