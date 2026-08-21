@@ -1,6 +1,6 @@
 {
   "name": "@merit-it/superops-sdk",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "TypeScript SDK wrapper for the SuperOps PSA GraphQL API, with built-in caching, retry/backoff, and auto-pagination",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

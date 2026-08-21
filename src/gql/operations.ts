@@ -148,7 +148,10 @@ export const GET_WORKLOG_ENTRIES = /* GraphQL */ `
         status
         billDateTime
         workItem
+        notes
+        unitPrice
         serviceItem
+        afterHours
         billable
         qty
         technician
@@ -271,7 +274,9 @@ export const GET_INVOICE_LIST = /* GraphQL */ `
         totalAmount
         notes
         paymentDate
+        paymentMethod
         paymentReference
+        invoicePaymentTerm
         paymentLink
         amountDue
       }
@@ -305,7 +310,9 @@ export const GET_INVOICE = /* GraphQL */ `
       totalAmount
       notes
       paymentDate
+      paymentMethod
       paymentReference
+      invoicePaymentTerm
       paymentLink
       amountDue
     }
@@ -392,6 +399,15 @@ export const GET_CLIENT_SITE = /* GraphQL */ `
     getClientSite(input: $input) {
       id
       name
+      businessHour {
+        day
+        end
+        start
+      }
+      holidayList {
+        id
+        name
+      }
       timezoneCode
       working24x7
       line1
@@ -402,6 +418,7 @@ export const GET_CLIENT_SITE = /* GraphQL */ `
       countryCode
       stateCode
       contactNumber
+      client
       hq
     }
   }
@@ -533,7 +550,6 @@ export const GET_TECHNICIAN_LIST = /* GraphQL */ `
   }
 `;
 
-/** `invoice` (a back-reference to the parent Invoice) is omitted to avoid a circular selection. */
 export const GET_INVOICE_ITEM_LIST = /* GraphQL */ `
   query GetInvoiceItemList($input: ListInfoInput!) {
     getInvoiceItemList(input: $input) {
@@ -551,6 +567,16 @@ export const GET_INVOICE_ITEM_LIST = /* GraphQL */ `
         serviceItem
         taxAmount
         totalAmount
+        invoice {
+          invoiceId
+          displayId
+          client
+          statusEnum
+          invoiceDate
+          dueDate
+          totalAmount
+          paymentDate
+        }
       }
       listInfo {
         totalCount
@@ -684,7 +710,7 @@ export const GET_OFFERED_ITEMS = /* GraphQL */ `
 `;
 
 export const GET_TASK_LIST = /* GraphQL */ `
-  query GetTaskList($input: GetTaskListInput) {
+  query GetTaskList($input: GetTaskListInput!) {
     getTaskList(input: $input) {
       tasks {
         taskId
@@ -701,6 +727,7 @@ export const GET_TASK_LIST = /* GraphQL */ `
         technician
         techGroup
         workItem
+        ticket
         taskOrder
         priority
       }

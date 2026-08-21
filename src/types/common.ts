@@ -43,12 +43,22 @@ export interface RuleConditionInput {
   operands: Operands;
 }
 
+/** Relative-date value for `DateTimeOperator`s like `inNext`/`inLast` (e.g. "in the last 7 days"). */
+export interface RelativeDateValue {
+  unit: 'YEAR' | 'MONTH' | 'WEEK' | 'DAY' | 'HOUR' | 'MINUTE' | 'SECOND';
+  quantity: string;
+}
+
 /** One leaf condition inside a `JoinedConditionInput` — value is a plain string, not the typed `Operands` bucket. */
 export interface ConditionOperand {
   attribute: string;
   operator: string;
-  /** A bare string for most operators; an array for `includes`/`notIncludes` (both verified working). */
-  value: string | string[];
+  /**
+   * A bare string for most operators; an array for `includes`/`notIncludes`; a
+   * `RelativeDateValue` for relative date/time operators like `inNext`/`inLast`
+   * (all verified working).
+   */
+  value: string | string[] | number | boolean | RelativeDateValue;
 }
 
 /**
@@ -57,9 +67,10 @@ export interface ConditionOperand {
  * types per-endpoint, not variants of one shape, so check what the endpoint you're calling actually
  * expects before picking one.
  */
+/** Operands can themselves be nested condition groups, not just flat leaf conditions. */
 export interface JoinedConditionInput {
   joinOperator: 'AND' | 'OR';
-  operands: ConditionOperand[];
+  operands: (ConditionOperand | JoinedConditionInput)[];
 }
 
 export interface SortInput {

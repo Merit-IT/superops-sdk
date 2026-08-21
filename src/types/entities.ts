@@ -28,9 +28,17 @@ export interface PersonRef {
   name?: string;
 }
 
+export interface BusinessHour {
+  day?: string;
+  end?: string;
+  start?: string;
+}
+
 export interface ClientSite {
   id: string;
   name?: string;
+  businessHour?: BusinessHour[];
+  holidayList?: { id?: string; name?: string }[];
   timezoneCode?: string;
   working24x7?: boolean;
   line1?: string;
@@ -181,6 +189,9 @@ export interface WorklogEntry {
   billable?: boolean;
   qty?: string;
   technician?: { userId: string; name?: string };
+  notes?: string;
+  unitPrice?: string;
+  afterHours?: boolean;
 }
 
 export type InvoiceStatus =
@@ -234,6 +245,8 @@ export interface InvoiceItem {
   serviceItem?: Pick<SuperOpsServiceItem, 'name' | 'quantityType'>;
   taxAmount?: string;
   totalAmount?: string;
+  /** Only present on `iterateInvoiceItems`/`GET_INVOICE_ITEM_LIST` — omitted from `Invoice.items` to avoid a circular selection. */
+  invoice?: Pick<Invoice, 'invoiceId' | 'displayId' | 'client' | 'statusEnum' | 'invoiceDate' | 'dueDate' | 'totalAmount' | 'paymentDate'>;
 }
 
 export interface InvoiceTaxItem {
@@ -490,6 +503,7 @@ export interface Task {
   technician?: Json;
   techGroup?: Json;
   workItem?: Json;
+  ticket?: Json;
   taskOrder?: number;
   priority?: string;
 }

@@ -176,7 +176,7 @@ export class SuperOpsClient {
     return res.getClientUser;
   }
 
-  /** `businessHour`/`holidayList`/`installerInfo` omitted — unresolved nested types, see gql/operations.ts. */
+  /** `installerInfo` omitted — unresolved nested type. */
   async getClientSite<T = ClientSite>(id: string, opts: CallOpts = {}): Promise<T> {
     const res = await this.http.execute<{ getClientSite: T }>(
       opts.query ?? GQL.GET_CLIENT_SITE,
