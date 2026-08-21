@@ -58,7 +58,7 @@ export interface ConditionOperand {
    * `RelativeDateValue` for relative date/time operators like `inNext`/`inLast`
    * (all verified working). Omitted entirely for `isEmpty`/`isNotEmpty`, which carry no value.
    */
-  value?: string | string[] | number | boolean | RelativeDateValue;
+  value?: string | number | boolean | (string | number | boolean)[] | RelativeDateValue;
 }
 
 /**
