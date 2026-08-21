@@ -43,6 +43,24 @@ export interface RuleConditionInput {
   operands: Operands;
 }
 
+/** One leaf condition inside a `JoinedConditionInput` — value is a plain string, not the typed `Operands` bucket. */
+export interface ConditionOperand {
+  attribute: string;
+  operator: string;
+  value: string;
+}
+
+/**
+ * Multi-condition AND/OR filter shape. Some list queries (e.g. `getClientContractList`) take this
+ * form instead of the single-attribute `RuleConditionInput` — the two are different GraphQL input
+ * types per-endpoint, not variants of one shape, so check what the endpoint you're calling actually
+ * expects before picking one.
+ */
+export interface JoinedConditionInput {
+  joinOperator: 'AND' | 'OR';
+  operands: ConditionOperand[];
+}
+
 export interface SortInput {
   attribute: string;
   direction: 'ASC' | 'DESC';
@@ -52,7 +70,7 @@ export interface SortInput {
 export interface ListInfoInput {
   page?: number;
   pageSize?: number;
-  condition?: RuleConditionInput;
+  condition?: RuleConditionInput | JoinedConditionInput;
   sort?: SortInput;
 }
 

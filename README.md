@@ -134,6 +134,20 @@ const overdue = await toArray(
 );
 
 const invoice = await superops.getInvoice(invoiceId);
+
+// Some list queries (e.g. getClientContractList) take a different, multi-condition AND/OR
+// filter shape instead of the single-attribute one above — use JoinedConditionInput for those:
+const activeUsageContracts = await toArray(
+  superops.iterateClientContracts({
+    condition: {
+      joinOperator: 'AND',
+      operands: [
+        { attribute: 'contract.contractType', operator: 'is', value: 'USAGE' },
+        { attribute: 'contractStatus', operator: 'is', value: 'ACTIVE' },
+      ],
+    },
+  }),
+);
 ```
 
 
