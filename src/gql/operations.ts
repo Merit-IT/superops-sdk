@@ -5,7 +5,7 @@
  */
 
 export const GET_CLIENT_LIST = /* GraphQL */ `
-  query GetClientList($input: ListInfoInput) {
+  query GetClientList($input: ListInfoInput!) {
     getClientList(input: $input) {
       clients {
         accountId
