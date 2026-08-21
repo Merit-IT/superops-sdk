@@ -153,15 +153,22 @@ export interface Note {
   privacyType?: NotePrivacyType;
 }
 
+/** `workItem` is schema-typed as an opaque scalar (no GraphQL subselection), but empirically resolves to this shape. */
+export interface WorkItemRef {
+  workId?: string;
+  displayId?: string;
+  module?: string;
+}
+
 export interface WorklogEntry {
   itemId: string;
   status?: string;
   billDateTime?: string;
-  workItem?: string;
+  workItem?: WorkItemRef;
   serviceItem?: Pick<SuperOpsServiceItem, 'itemId' | 'name'>;
   billable?: boolean;
-  qty?: number;
-  technician?: { id: string; name?: string };
+  qty?: string;
+  technician?: { userId: string; name?: string };
 }
 
 export type InvoiceStatus =

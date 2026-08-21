@@ -283,19 +283,20 @@ export class SuperOpsClient {
 
   // ---- Worklogs ----------------------------------------------------------
 
+  /** `getWorklogEntries` takes its own `GetWorklogEntriesInput!` — pagination/condition nest under `listInfo`. */
   async *iterateWorklogEntries<T = WorklogEntry>(
     input?: ListInfoInput,
     opts: CallOpts = {},
   ): AsyncGenerator<T[], void, void> {
     yield* iteratePages<T>(async (page) => {
       const res = await this.http.execute<{
-        getWorklogEntries: { items: T[]; listInfo: WrappedListResponse<T>['listInfo'] };
+        getWorklogEntries: { entries: T[]; listInfo: WrappedListResponse<T>['listInfo'] };
       }>(
         opts.query ?? GQL.GET_WORKLOG_ENTRIES,
-        { input: { ...input, page } },
+        { input: { listInfo: { ...input, page } } },
         { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
       );
-      return res.getWorklogEntries;
+      return { items: res.getWorklogEntries.entries, listInfo: res.getWorklogEntries.listInfo };
     });
   }
 

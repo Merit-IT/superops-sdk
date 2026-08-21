@@ -141,9 +141,9 @@ export const GET_CLIENT_CONTRACT = /* GraphQL */ `
 `;
 
 export const GET_WORKLOG_ENTRIES = /* GraphQL */ `
-  query GetWorklogEntries($input: ListInfoInput) {
+  query GetWorklogEntries($input: GetWorklogEntriesInput!) {
     getWorklogEntries(input: $input) {
-      items {
+      entries {
         itemId
         status
         billDateTime
@@ -155,7 +155,7 @@ export const GET_WORKLOG_ENTRIES = /* GraphQL */ `
         billable
         qty
         technician {
-          id
+          userId
           name
         }
       }
