@@ -69,7 +69,8 @@ export interface ConditionOperand {
  */
 /** Operands can themselves be nested condition groups, not just flat leaf conditions. */
 export interface JoinedConditionInput {
-  joinOperator: 'AND' | 'OR';
+  /** Optional — omitted for a single-operand condition where there's nothing to join. */
+  joinOperator?: 'AND' | 'OR';
   operands: (ConditionOperand | JoinedConditionInput)[];
 }
 
