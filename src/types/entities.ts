@@ -1,5 +1,23 @@
 export type Json = Record<string, unknown> | unknown[] | string | number | boolean | null;
 
+/**
+ * `client` (on `ClientContract`) is schema-typed as an opaque scalar — the field takes no
+ * GraphQL subselection — but empirically always resolves to this shape.
+ */
+export interface ClientRef {
+  accountId?: string;
+  name: string;
+}
+
+/**
+ * `chargeItem` (on `BillableContract`) is schema-typed as an opaque scalar for the same
+ * reason as `ClientRef`, but empirically always resolves to this shape.
+ */
+export interface ChargeItemRef {
+  itemId: string | number;
+  name?: string;
+}
+
 export interface ClientSite {
   id: string;
   name?: string;
@@ -256,7 +274,7 @@ export interface BlockItemInfo {
 
 export interface BillableContract {
   contractId: string;
-  chargeItem?: Json;
+  chargeItem?: ChargeItemRef;
   quantityCalculationType?: string;
   sellingPriceCalculationType?: string;
   provisionRule?: Json;
@@ -287,7 +305,7 @@ export interface Contract {
 
 export interface ClientContract {
   contractId: string;
-  client?: Json;
+  client?: ClientRef;
   contract?: Contract;
   startDate?: string;
   endDate?: string;
