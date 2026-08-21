@@ -19,6 +19,15 @@ export interface ChargeItemRef {
   description?: string;
 }
 
+/**
+ * `requester` (on `Ticket`) is schema-typed as an opaque scalar for the same reason as
+ * `ClientRef`, but empirically always resolves to this shape.
+ */
+export interface PersonRef {
+  userId?: string;
+  name?: string;
+}
+
 export interface ClientSite {
   id: string;
   name?: string;
@@ -107,7 +116,7 @@ export interface Ticket {
   source?: string;
   client?: Json;
   site?: Json;
-  requester?: Json;
+  requester?: PersonRef;
   additionalRequester?: Json;
   followers?: Json;
   techGroup?: Json;
