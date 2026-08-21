@@ -240,6 +240,22 @@ export const GET_SERVICE_CATEGORY_LIST = /* GraphQL */ `
   }
 `;
 
+const INVOICE_ITEM_FIELDS = /* GraphQL */ `
+  itemId
+  billedDate
+  details
+  quantity
+  unitPrice
+  discountAmount
+  discountRate
+  amount
+  taxable
+  tax
+  serviceItem
+  taxAmount
+  totalAmount
+`;
+
 export const GET_INVOICE_LIST = /* GraphQL */ `
   query GetInvoiceList($input: ListInfoInput!) {
     getInvoiceList(input: $input) {
@@ -252,6 +268,9 @@ export const GET_INVOICE_LIST = /* GraphQL */ `
         dueDate
         statusEnum
         sentToClient
+        items {
+          ${INVOICE_ITEM_FIELDS}
+        }
         discountAmount
         additionalDiscount
         additionalDiscountRate
@@ -283,6 +302,9 @@ export const GET_INVOICE = /* GraphQL */ `
       dueDate
       statusEnum
       sentToClient
+      items {
+        ${INVOICE_ITEM_FIELDS}
+      }
       discountAmount
       additionalDiscount
       additionalDiscountRate
@@ -442,6 +464,7 @@ export const GET_TICKET_LIST = /* GraphQL */ `
         cause
         subcause
         resolutionCode
+        resolutionTime
         createdTime
         updatedTime
         customFields

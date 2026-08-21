@@ -1,6 +1,6 @@
 import { HttpExecutor, type ExecuteOptions, type RetryOptions, type GraphQLError } from './http';
 import { iteratePages, type WrappedListResponse } from './pagination';
-import type { ListInfoInput } from './types/common';
+import type { ListInfoInput, ListInfo } from './types/common';
 import type {
   Client,
   ClientContract,
@@ -227,15 +227,29 @@ export class SuperOpsClient {
     opts: CallOpts = {},
   ): AsyncGenerator<T[], void, void> {
     yield* iteratePages<T>(async (page) => {
-      const res = await this.http.execute<{
-        getTicketList: { tickets: T[]; listInfo: WrappedListResponse<T>['listInfo'] };
-      }>(
-        opts.query ?? GQL.GET_TICKET_LIST,
-        { input: { ...input, page } },
-        { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
-      );
-      return { items: res.getTicketList.tickets, listInfo: res.getTicketList.listInfo };
+      const res = await this.getTicketsPage<T>({ ...input, page }, opts);
+      return { items: res.tickets, listInfo: res.listInfo };
     });
+  }
+
+  /**
+   * Fetches one page of tickets along with its `listInfo` (`totalCount`/`hasMore`/etc) —
+   * unlike `iterateTickets`, which yields bare item pages and drops the pagination metadata.
+   * Use this when you're building your own pager (e.g. exposing page/pageSize/totalCount to
+   * a frontend) instead of draining the whole list with `toArray`.
+   */
+  async getTicketsPage<T = Ticket>(
+    input?: ListInfoInput,
+    opts: CallOpts = {},
+  ): Promise<{ tickets: T[]; listInfo: ListInfo }> {
+    const res = await this.http.execute<{
+      getTicketList: { tickets: T[]; listInfo: WrappedListResponse<T>['listInfo'] };
+    }>(
+      opts.query ?? GQL.GET_TICKET_LIST,
+      { input },
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.getTicketList;
   }
 
   /** Bare array for one ticket, no pagination. */
@@ -372,15 +386,29 @@ export class SuperOpsClient {
     opts: CallOpts = {},
   ): AsyncGenerator<T[], void, void> {
     yield* iteratePages<T>(async (page) => {
-      const res = await this.http.execute<{
-        getInvoiceList: { invoices: T[]; listInfo: WrappedListResponse<T>['listInfo'] };
-      }>(
-        opts.query ?? GQL.GET_INVOICE_LIST,
-        { input: { ...input, page } },
-        { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
-      );
-      return { items: res.getInvoiceList.invoices, listInfo: res.getInvoiceList.listInfo };
+      const res = await this.getInvoicesPage<T>({ ...input, page }, opts);
+      return { items: res.invoices, listInfo: res.listInfo };
     });
+  }
+
+  /**
+   * Fetches one page of invoices along with its `listInfo` (`totalCount`/`hasMore`/etc) —
+   * unlike `iterateInvoices`, which yields bare item pages and drops the pagination metadata.
+   * Use this when you're building your own pager (e.g. exposing page/pageSize/totalCount to
+   * a frontend) instead of draining the whole list with `toArray`.
+   */
+  async getInvoicesPage<T = Invoice>(
+    input?: ListInfoInput,
+    opts: CallOpts = {},
+  ): Promise<{ invoices: T[]; listInfo: ListInfo }> {
+    const res = await this.http.execute<{
+      getInvoiceList: { invoices: T[]; listInfo: WrappedListResponse<T>['listInfo'] };
+    }>(
+      opts.query ?? GQL.GET_INVOICE_LIST,
+      { input },
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.getInvoiceList;
   }
 
   async getInvoice<T = Invoice>(invoiceId: string, opts: CallOpts = {}): Promise<T> {

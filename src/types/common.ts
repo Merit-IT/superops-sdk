@@ -63,7 +63,7 @@ export interface JoinedConditionInput {
 
 export interface SortInput {
   attribute: string;
-  direction: 'ASC' | 'DESC';
+  order: 'ASC' | 'DESC';
 }
 
 /** Pagination input accepted by most (but not all — see README) SuperOps get*List queries. */
@@ -71,7 +71,8 @@ export interface ListInfoInput {
   page?: number;
   pageSize?: number;
   condition?: RuleConditionInput | JoinedConditionInput;
-  sort?: SortInput;
+  /** A bare object and an array of objects are both verified working — GraphQL coerces a scalar into a single-element list for list-typed arguments. */
+  sort?: SortInput | SortInput[];
 }
 
 /** Pagination metadata returned by most (but not all) SuperOps get*List queries. */

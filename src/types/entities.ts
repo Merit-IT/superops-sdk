@@ -16,6 +16,7 @@ export interface ClientRef {
 export interface ChargeItemRef {
   itemId: string | number;
   name?: string;
+  description?: string;
 }
 
 export interface ClientSite {
@@ -219,7 +220,7 @@ export interface InvoiceItem {
   amount?: string;
   taxable?: boolean;
   tax?: Json;
-  serviceItem?: Json;
+  serviceItem?: Pick<SuperOpsServiceItem, 'name' | 'quantityType'>;
   taxAmount?: string;
   totalAmount?: string;
 }

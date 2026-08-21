@@ -21,9 +21,9 @@ What's wrapped as a typed method today
 | WorklogEntry | `iterateWorklogEntries` | — | 
 | ServiceCatalogItem | `iterateServiceCatalogItems` | `createServiceCatalogItem` | 
 | ServiceCategory | `listServiceCategories` | — |
-| Invoice | `iterateInvoices`, `getInvoice` | `createInvoice` | 
+| Invoice | `iterateInvoices`, `getInvoicesPage`, `getInvoice` | `createInvoice` | 
 | InvoiceItem | `iterateInvoiceItems` | — |
-| Ticket | `iterateTickets` | — |
+| Ticket | `iterateTickets`, `getTicketsPage` | — |
 | Note (ticket notes) | `listTicketNotes` | — |
 | Technician | `iterateTechnicians` | — |
 | Tax | `iterateTaxes`, `getTax` | — |
@@ -104,6 +104,16 @@ const updatedId = await superops.updateClientContract({
 Every list operation (`iterateClients`, `iterateClientContracts`, `iterateWorklogEntries`,
 `iterateServiceCatalogItems`) is a single async generator — no separate "give me everything"
 vs. "give me one page" methods to choose between. You decide how much to consume:
+
+Invoices and tickets are the exception: `iterateInvoices`/`iterateTickets` yield bare item
+pages like every other generator, dropping `listInfo` (`totalCount`/`hasMore`) along the way —
+fine for draining the whole list, but not if you're building your own pager (e.g. exposing
+page/pageSize/totalCount to a frontend). For that, `getInvoicesPage`/`getTicketsPage` fetch one
+page and return it alongside its `listInfo` directly, no generator involved:
+
+```ts
+const { invoices, listInfo } = await superops.getInvoicesPage({ page: 1, pageSize: 10 });
+```
 
 ```ts
 import { toArray } from '@merit-it/superops-sdk';
