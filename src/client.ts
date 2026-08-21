@@ -56,6 +56,9 @@ export interface SuperOpsClientConfig {
 
 const DEFAULT_API_URL = 'https://api.superops.ai/msp';
 
+/** Used when a `get*List` envelope field itself resolves to null — no error, just empty. */
+const EMPTY_LIST_INFO: ListInfo = { totalCount: 0, page: 1, pageSize: 0, hasMore: false };
+
 /**
  * Options shared by every typed method: `query` swaps the field selection (the response
  * envelope shape vs bare array — must stay the same). Useful when the
@@ -115,7 +118,7 @@ export class SuperOpsClient {
         { input: { ...input, page } },
         { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
       );
-      return { items: res.getClientList.clients, listInfo: res.getClientList.listInfo };
+      return { items: res.getClientList?.clients ?? [], listInfo: res.getClientList?.listInfo ?? EMPTY_LIST_INFO };
     });
   }
 
@@ -135,7 +138,7 @@ export class SuperOpsClient {
       undefined,
       { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
     );
-    return res.getClientCustomFieldList;
+    return res.getClientCustomFieldList ?? [];
   }
 
   async getClientCustomField<T = CustomField>(fieldId: string, opts: CallOpts = {}): Promise<T> {
@@ -160,7 +163,7 @@ export class SuperOpsClient {
         { input: { clientId, listInfo: { ...listInfo, page } } },
         { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
       );
-      return { items: res.getClientUserList.userList, listInfo: res.getClientUserList.listInfo };
+      return { items: res.getClientUserList?.userList ?? [], listInfo: res.getClientUserList?.listInfo ?? EMPTY_LIST_INFO };
     });
   }
 
@@ -197,7 +200,7 @@ export class SuperOpsClient {
         { input: { ...input, page } },
         { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
       );
-      return { items: res.getClientContractList.clientContracts, listInfo: res.getClientContractList.listInfo };
+      return { items: res.getClientContractList?.clientContracts ?? [], listInfo: res.getClientContractList?.listInfo ?? EMPTY_LIST_INFO };
     });
   }
 
@@ -228,7 +231,7 @@ export class SuperOpsClient {
   ): AsyncGenerator<T[], void, void> {
     yield* iteratePages<T>(async (page) => {
       const res = await this.getTicketsPage<T>({ ...input, page }, opts);
-      return { items: res.tickets, listInfo: res.listInfo };
+      return { items: res?.tickets ?? [], listInfo: res?.listInfo ?? EMPTY_LIST_INFO };
     });
   }
 
@@ -259,7 +262,7 @@ export class SuperOpsClient {
       { input: { ticketId } },
       { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
     );
-    return res.getTicketNoteList;
+    return res.getTicketNoteList ?? [];
   }
 
   /**
@@ -274,7 +277,7 @@ export class SuperOpsClient {
       { input: { ticketId } },
       { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
     );
-    return res.getTicketConversationList;
+    return res.getTicketConversationList ?? [];
   }
 
   // ---- Technicians ------------------------------------------------------------
@@ -291,7 +294,7 @@ export class SuperOpsClient {
         { input: { ...input, page } },
         { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
       );
-      return { items: res.getTechnicianList.userList, listInfo: res.getTechnicianList.listInfo };
+      return { items: res.getTechnicianList?.userList ?? [], listInfo: res.getTechnicianList?.listInfo ?? EMPTY_LIST_INFO };
     });
   }
 
@@ -310,7 +313,7 @@ export class SuperOpsClient {
         { input: { listInfo: { ...input, page } } },
         { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
       );
-      return { items: res.getWorklogEntries.entries, listInfo: res.getWorklogEntries.listInfo };
+      return { items: res.getWorklogEntries?.entries ?? [], listInfo: res.getWorklogEntries?.listInfo ?? EMPTY_LIST_INFO };
     });
   }
 
@@ -351,7 +354,7 @@ export class SuperOpsClient {
       undefined,
       { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
     );
-    return res.getServiceCategoryList;
+    return res.getServiceCategoryList ?? [];
   }
 
   async *iterateServiceItems<T = ServiceItem>(
@@ -387,7 +390,7 @@ export class SuperOpsClient {
   ): AsyncGenerator<T[], void, void> {
     yield* iteratePages<T>(async (page) => {
       const res = await this.getInvoicesPage<T>({ ...input, page }, opts);
-      return { items: res.invoices, listInfo: res.listInfo };
+      return { items: res?.invoices ?? [], listInfo: res?.listInfo ?? EMPTY_LIST_INFO };
     });
   }
 
@@ -456,7 +459,7 @@ export class SuperOpsClient {
         { input: { ...input, page } },
         { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
       );
-      return { items: res.getTaxList.taxes, listInfo: res.getTaxList.listInfo };
+      return { items: res.getTaxList?.taxes ?? [], listInfo: res.getTaxList?.listInfo ?? EMPTY_LIST_INFO };
     });
   }
 
@@ -477,7 +480,7 @@ export class SuperOpsClient {
       undefined,
       { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
     );
-    return res.getWorkStatusList;
+    return res.getWorkStatusList ?? [];
   }
 
   async listUrgencies<T = Urgency>(opts: CallOpts = {}): Promise<T[]> {
@@ -486,7 +489,7 @@ export class SuperOpsClient {
       undefined,
       { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
     );
-    return res.getUrgencyList;
+    return res.getUrgencyList ?? [];
   }
 
   async listCategories<T = Category>(opts: CallOpts = {}): Promise<T[]> {
@@ -495,7 +498,7 @@ export class SuperOpsClient {
       undefined,
       { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
     );
-    return res.getCategoryList;
+    return res.getCategoryList ?? [];
   }
 
   async listSLAs<T = SLA>(opts: CallOpts = {}): Promise<T[]> {
@@ -504,7 +507,7 @@ export class SuperOpsClient {
       undefined,
       { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
     );
-    return res.getSLAList;
+    return res.getSLAList ?? [];
   }
 
   // ---- Offered items ------------------------------------------------------
@@ -540,7 +543,7 @@ export class SuperOpsClient {
         { input: { module, listInfo: { ...listInfo, page } } },
         { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
       );
-      return { items: res.getTaskList.tasks, listInfo: res.getTaskList.listInfo };
+      return { items: res.getTaskList?.tasks ?? [], listInfo: res.getTaskList?.listInfo ?? EMPTY_LIST_INFO };
     });
   }
 }

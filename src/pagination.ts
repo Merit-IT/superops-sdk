@@ -31,8 +31,14 @@ export async function* iteratePages<T>(
       yield result;
       return;
     }
-    yield result.items;
-    if (!result.listInfo.hasMore) return;
+    // A `get*List`-style field can legitimately resolve to null (no error, just an empty
+    // envelope) — treat that the same as an empty page rather than crashing on `.items`.
+    if (!result) {
+      yield [];
+      return;
+    }
+    yield result.items ?? [];
+    if (!result.listInfo?.hasMore) return;
   }
 }
 
