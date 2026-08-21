@@ -148,16 +148,10 @@ export const GET_WORKLOG_ENTRIES = /* GraphQL */ `
         status
         billDateTime
         workItem
-        serviceItem {
-          itemId
-          name
-        }
+        serviceItem
         billable
         qty
-        technician {
-          userId
-          name
-        }
+        technician
       }
       listInfo {
         totalCount
@@ -349,7 +343,7 @@ export const GET_CLIENT_CUSTOM_FIELD = /* GraphQL */ `
 `;
 
 export const GET_CLIENT_USER_LIST = /* GraphQL */ `
-  query GetClientUserList($input: GetClientUserListInput) {
+  query GetClientUserList($input: GetClientUserListInput!) {
     getClientUserList(input: $input) {
       userList {
         userId
@@ -358,6 +352,10 @@ export const GET_CLIENT_USER_LIST = /* GraphQL */ `
         name
         email
         contactNumber
+        reportingManager
+        role
+        site
+        client
         customFields
         createdTime
         updatedTime
@@ -452,6 +450,8 @@ export const GET_TICKET_LIST = /* GraphQL */ `
         client
         site
         requester
+        additionalRequester
+        followers
         techGroup
         technician
         status
@@ -463,9 +463,16 @@ export const GET_TICKET_LIST = /* GraphQL */ `
         subcategory
         cause
         subcause
+        requestType
         resolutionCode
         resolutionTime
+        resolutionDueTime
+        resolutionViolated
         firstResponseTime
+        firstResponseDueTime
+        firstResponseViolated
+        sla
+        worklogTimespent
         createdTime
         updatedTime
         customFields
@@ -499,7 +506,7 @@ export const GET_TICKET_NOTE_LIST = /* GraphQL */ `
 `;
 
 export const GET_TECHNICIAN_LIST = /* GraphQL */ `
-  query GetTechnicianList($input: ListInfoInput) {
+  query GetTechnicianList($input: ListInfoInput!) {
     getTechnicianList(input: $input) {
       userList {
         userId
@@ -509,6 +516,12 @@ export const GET_TECHNICIAN_LIST = /* GraphQL */ `
         email
         contactNumber
         emailSignature
+        designation
+        businessFunction
+        team
+        reportingManager
+        role
+        groups
       }
       listInfo {
         totalCount
@@ -522,7 +535,7 @@ export const GET_TECHNICIAN_LIST = /* GraphQL */ `
 
 /** `invoice` (a back-reference to the parent Invoice) is omitted to avoid a circular selection. */
 export const GET_INVOICE_ITEM_LIST = /* GraphQL */ `
-  query GetInvoiceItemList($input: ListInfoInput) {
+  query GetInvoiceItemList($input: ListInfoInput!) {
     getInvoiceItemList(input: $input) {
       items {
         itemId

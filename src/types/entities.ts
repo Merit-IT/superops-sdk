@@ -77,6 +77,8 @@ export interface ClientUser {
   reportingManager?: Json;
   /** Confirmed JSON scalar — not an enum, despite the name. */
   role?: Json;
+  site?: Json;
+  client?: Json;
   customFields?: Record<string, Json>;
   createdTime?: string;
   updatedTime?: string;
