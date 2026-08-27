@@ -7,7 +7,7 @@ export type { GraphQLError, GraphQLResponse, RetryOptions, ExecuteOptions } from
 export { CacheService, MemoryCacheStore } from './cache';
 export type { CacheStore, CacheOptions } from './cache';
 
-export { iteratePages, toArray } from './pagination';
+export { iteratePages, toArray, withPartialPageRecovery } from './pagination';
 export type { WrappedListResponse } from './pagination';
 
 export * as SuperOpsGQL from './gql/operations';

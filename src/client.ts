@@ -1,5 +1,5 @@
 import { HttpExecutor, type ExecuteOptions, type RetryOptions, type GraphQLError } from './http';
-import { iteratePages, type WrappedListResponse } from './pagination';
+import { iteratePages, withPartialPageRecovery, type WrappedListResponse } from './pagination';
 import type { ListInfoInput, ListInfo } from './types/common';
 import type {
   Client,
@@ -69,6 +69,22 @@ interface CallOpts {
   query?: string;
   /** Per-call override for retrying GraphQL-level execution errors — see `ExecuteOptions`. */
   retryOnGraphQLError?: ExecuteOptions['retryOnGraphQLError'];
+}
+
+/**
+ * Extra opt-in options for `iterate*` methods that support partial-page recovery (see
+ * `withPartialPageRecovery` in pagination.ts) — currently `iterateOfferedItems` and
+ * `iterateWorklogEntries`, the two endpoints known to hit SuperOps' "one row nulled out"
+ * schema violation across many pages of a full sync.
+ */
+interface PaginatedCallOpts extends CallOpts {
+  /**
+   * When true, a page that errors but still carries partial data for its list field uses
+   * that partial data and keeps paginating, instead of the whole generator throwing and
+   * losing every row already fetched. Off by default - errors still throw as normal.
+   */
+  recoverPartialPages?: boolean;
+  onPartialPageError?: (info: { page: number; errors: GraphQLError[]; recoveredCount: number }) => void;
 }
 
 /**
@@ -308,10 +324,10 @@ export class SuperOpsClient {
    */
   async *iterateWorklogEntries<T = WorklogEntry>(
     input?: ListInfoInput & { module?: string },
-    opts: CallOpts = {},
+    opts: PaginatedCallOpts = {},
   ): AsyncGenerator<T[], void, void> {
     const { module, ...listInfo } = input ?? {};
-    yield* iteratePages<T>(async (page) => {
+    const fetchPage = async (page: number) => {
       const res = await this.http.execute<{
         getWorklogEntries: { entries: T[]; listInfo: WrappedListResponse<T>['listInfo'] };
       }>(
@@ -320,7 +336,12 @@ export class SuperOpsClient {
         { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
       );
       return { items: res.getWorklogEntries?.entries ?? [], listInfo: res.getWorklogEntries?.listInfo ?? EMPTY_LIST_INFO };
-    });
+    };
+    yield* iteratePages<T>(
+      opts.recoverPartialPages
+        ? withPartialPageRecovery(fetchPage, ['getWorklogEntries'], 'entries', opts.onPartialPageError)
+        : fetchPage,
+    );
   }
 
   // ---- Service catalog ----------------------------------------------------
@@ -531,9 +552,9 @@ export class SuperOpsClient {
 
   async *iterateOfferedItems<T = OfferedItem>(
     input?: ListInfoInput,
-    opts: CallOpts = {},
+    opts: PaginatedCallOpts = {},
   ): AsyncGenerator<T[], void, void> {
-    yield* iteratePages<T>(async (page) => {
+    const fetchPage = async (page: number) => {
       const res = await this.http.execute<{
         getOfferedItems: { items: T[]; listInfo: WrappedListResponse<T>['listInfo'] };
       }>(
@@ -542,7 +563,12 @@ export class SuperOpsClient {
         { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
       );
       return res.getOfferedItems;
-    });
+    };
+    yield* iteratePages<T>(
+      opts.recoverPartialPages
+        ? withPartialPageRecovery(fetchPage, ['getOfferedItems'], 'items', opts.onPartialPageError)
+        : fetchPage,
+    );
   }
 
   // ---- Tasks ------------------------------------------------------------

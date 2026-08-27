@@ -1,4 +1,5 @@
 import type { ListInfo } from './types/common';
+import { SuperOpsGraphQLError, type GraphQLError } from './http';
 
 export interface WrappedListResponse<T> {
   items: T[];
@@ -38,8 +39,71 @@ export async function* iteratePages<T>(
       return;
     }
     yield result.items ?? [];
+
+    // A response that has a listInfo envelope but no `hasMore` key at all (as opposed to a
+    // legitimate `hasMore: false`) almost always means a caller-supplied `query` override
+    // (see the README's "Overriding the default field selection" section) forgot to select
+    // `listInfo { hasMore }`. Silently treating that as "no more pages" would truncate the
+    // result set without any error - fail loudly instead so the mistake surfaces immediately
+    // rather than as missing rows discovered much later.
+    if (result.listInfo && typeof result.listInfo.hasMore !== 'boolean') {
+      throw new Error(
+        `iteratePages: page ${page}'s response has a listInfo envelope but no boolean ` +
+          '`hasMore` field. If you passed a custom `query` override, make sure it selects ' +
+          '`listInfo { hasMore }` - without it, pagination cannot tell when to stop and ' +
+          'would otherwise silently return only this page.',
+      );
+    }
     if (!result.listInfo?.hasMore) return;
   }
+}
+
+/**
+ * Wraps a paginated `fetchPage` callback so that a page whose request throws a
+ * `SuperOpsGraphQLError` still yields whatever partial data came back for the expected list
+ * field, instead of aborting the whole `iteratePages` generator and losing every row already
+ * fetched. SuperOps is known to return `errors[]` alongside a genuinely populated `data` for
+ * some list endpoints - e.g. one row violating a non-null schema type (a documented, expected
+ * shape of its API, not a transient failure) - and the default `errorPolicy: 'throw'` treats
+ * that the same as a real failure.
+ *
+ * This differs from `errorPolicy: 'tolerant'` in two ways: (1) it only recovers when the
+ * *specific list field* you're reading survived as an array - `tolerant` merely checks that
+ * the top-level `data` is non-null, which a field-level failure (`{ data: { getXList: null },
+ * errors: [...] }`) still satisfies, silently yielding an empty page; (2) after recovering a
+ * broken page it keeps paginating to the next page (assuming there's more data whenever the
+ * broken page wasn't itself empty) instead of treating the broken page as the end of the list.
+ *
+ * `resultPath`/`listField` describe where the list lives in the error's `data` payload, same
+ * as the shape a successful response for that query would have - e.g. for
+ * `getOfferedItems { items ... }` that's `resultPath: ['getOfferedItems'], listField: 'items'`.
+ */
+export function withPartialPageRecovery<T>(
+  fetchPage: (page: number) => Promise<WrappedListResponse<T> | T[]>,
+  resultPath: string[],
+  listField: string,
+  onPartialError?: (info: { page: number; errors: GraphQLError[]; recoveredCount: number }) => void,
+): (page: number) => Promise<WrappedListResponse<T> | T[]> {
+  return async (page: number) => {
+    try {
+      return await fetchPage(page);
+    } catch (err) {
+      if (!(err instanceof SuperOpsGraphQLError)) throw err;
+
+      let node: unknown = err.data;
+      for (const key of resultPath) node = (node as Record<string, unknown> | undefined)?.[key];
+      const partialItems = (node as Record<string, unknown> | undefined)?.[listField];
+      if (!Array.isArray(partialItems)) throw err;
+
+      const items = partialItems.filter((item: unknown) => item != null) as T[];
+      onPartialError?.({ page, errors: err.errors, recoveredCount: items.length });
+
+      // The broken page's own listInfo isn't trustworthy (that's what errored) - assume
+      // there's more to fetch only if this page actually had rows; an empty recovered page
+      // stops here rather than retrying indefinitely against a permanently broken endpoint.
+      return { items, listInfo: { totalCount: 0, page, pageSize: items.length, hasMore: items.length > 0 } };
+    }
+  };
 }
 
 /**

@@ -233,3 +233,32 @@ const serviceItems = await toArray(
   superops.iterateServiceItems(undefined, { retryOnGraphQLError: isTransientSuperOpsError }),
 );
 ```
+
+### Recovering partial pages instead of losing a whole sync
+
+SuperOps' API is also known to return `errors[]` *alongside* genuinely populated `data` on some
+list endpoints — e.g. a single row violating a non-null schema type (`getOfferedItems` hits this
+regularly across a full sync). By default that still throws (`errorPolicy: 'throw'`), which loses
+every row already fetched in the current generator, not just the broken row.
+
+`iterateOfferedItems`/`iterateWorklogEntries` (the two endpoints this has actually been observed
+against) accept a `recoverPartialPages` flag: a page that errors but still carries partial data
+for its list field uses that partial data (dropping only the null row(s)) and keeps paginating,
+instead of the whole sync aborting. `errorPolicy: 'tolerant'` looks similar but isn't a
+substitute here — it only checks that the top-level `data` is non-null, which a field-level
+failure (`{ data: { getOfferedItems: null }, errors: [...] }`) still satisfies, silently
+returning an empty page with no way to tell a caller that rows were lost.
+
+```ts
+const offeredItems = await toArray(
+  superops.iterateOfferedItems(undefined, {
+    recoverPartialPages: true,
+    onPartialPageError: ({ page, errors, recoveredCount }) =>
+      console.warn(`page ${page}: recovered ${recoveredCount} row(s) despite errors`, errors),
+  }),
+);
+```
+
+`withPartialPageRecovery` (wrapping any `fetchPage`-shaped callback passed to `iteratePages`) is
+also exported directly, if you need this same recovery for an endpoint that doesn't have it
+built in yet.
