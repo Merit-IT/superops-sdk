@@ -242,7 +242,12 @@ export interface InvoiceItem {
   amount?: string;
   taxable?: boolean;
   tax?: Json;
-  serviceItem?: Pick<SuperOpsServiceItem, 'name' | 'quantityType'>;
+  /** `itemId` is returned by the API alongside `name`/`quantityType` even though earlier SDK
+   * versions didn't type it — confirmed against SuperOps' own documented invoice-item shape.
+   * Use it to look up the full catalog entry (`client.getServiceCatalogItem(itemId)`) for
+   * `itemType` ('PRODUCT' vs 'SERVICE') or `category` when you need to distinguish hardware/
+   * product line items from recurring service billing. */
+  serviceItem?: Pick<SuperOpsServiceItem, 'itemId' | 'name' | 'quantityType'>;
   taxAmount?: string;
   totalAmount?: string;
   /** Only present on `iterateInvoiceItems`/`GET_INVOICE_ITEM_LIST` — omitted from `Invoice.items` to avoid a circular selection. */
