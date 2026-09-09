@@ -992,3 +992,144 @@ export interface UpdateInvoiceInput {
   paymentReference?: string;
   invoicePaymentTerm?: { paymentTermId: string };
 }
+
+/** `createTicketConversation`'s `toUsers`/`ccUsers`/`bccUsers` take this shape — just an email, unlike the `PersonRef`-ish objects the same fields resolve to in the response. */
+export interface RecipientIdentifierInput {
+  email: string;
+}
+
+/**
+ * `createTicketNote` is deprecated in SuperOps' schema in favor of `createNote`, but `createNote`
+ * isn't documented with its own input/response shape in the same way, so this SDK wraps the
+ * existing (still-functional) mutation. Swap to `createNote` here once SuperOps' docs cover it.
+ */
+export interface CreateTicketNoteInput {
+  ticket: { ticketId: string };
+  content: string;
+  attachments?: CreateAttachmentInput[];
+  addedBy?: { userId: string };
+  addedOn?: string;
+  privacyType?: NotePrivacyType;
+}
+
+export interface CreateTicketConversationInput {
+  ticket: { ticketId: string };
+  content?: string;
+  user?: { userId: string };
+  time?: string;
+  toUsers?: RecipientIdentifierInput[];
+  ccUsers?: RecipientIdentifierInput[];
+  bccUsers?: RecipientIdentifierInput[];
+  attachments?: CreateAttachmentInput[];
+  /** Whether SuperOps should send an email for the technician-initiated conversation. */
+  sendMail?: boolean;
+}
+
+export interface ClientStatus {
+  statusId: string;
+  name?: string;
+}
+
+export interface ClientStage {
+  stageId: string;
+  name: string;
+  /** System-generated unique name identifying a default client stage (e.g. `'ACTIVE'`). */
+  constant?: string;
+  statuses?: ClientStatus[];
+}
+
+export interface RoleType {
+  roleTypeId: string;
+  name?: string;
+}
+
+/** `feature`/`operationList` are schema enums — left as strings since we don't enumerate the full value sets here. */
+export interface RoleFeature {
+  feature: string;
+  operationList: string[];
+}
+
+export interface Role {
+  roleId: string;
+  name?: string;
+  description?: string;
+  roleType?: RoleType;
+  roleFeatureList?: RoleFeature[];
+  roleUserList?: PersonRef[];
+}
+
+/** @deprecated on SuperOps' schema — use `getFields` instead. Kept for parity with `getPriorityList`. */
+export interface Priority {
+  id: string;
+  name?: string;
+  colorCode?: string;
+}
+
+/** @deprecated on SuperOps' schema — use `getFields` instead. Kept for parity with `getImpactList`. */
+export interface Impact {
+  id: string;
+  name?: string;
+}
+
+/** @deprecated on SuperOps' schema — use `getFields` instead. Kept for parity with `getResolutionCodeList`. */
+export interface ResolutionCode {
+  id: string;
+  name?: string;
+  description?: string;
+}
+
+/** @deprecated on SuperOps' schema — use `getFields` instead. Kept for parity with `getCauseList`. */
+export interface SubCause {
+  id: string;
+  name?: string;
+  description?: string;
+}
+
+/** @deprecated on SuperOps' schema — use `getFields` instead. Kept for parity with `getCauseList`. */
+export interface Cause {
+  id: string;
+  name?: string;
+  subCauses?: SubCause[];
+}
+
+/** @deprecated on SuperOps' schema — use `getFields` instead. Kept for parity with `getStatusList`. */
+export interface Status {
+  id: string;
+  name?: string;
+  description?: string;
+}
+
+export interface TechnicianGroup {
+  groupId: string;
+  name?: string;
+}
+
+/** Each entry is itself a named list of holidays (e.g. "USA Holidays"), not a single holiday. */
+export interface HolidayList {
+  id: string;
+  name: string;
+}
+
+export interface PaymentMethod {
+  paymentMethodId: string;
+  paymentMethodName: string;
+}
+
+export interface PaymentTerm {
+  paymentTermId: string;
+  paymentTermName: string;
+  /** Number of days (e.g. 30 for "Net 30"). */
+  paymentTermValue?: number;
+}
+
+export interface ClientUserAssociation {
+  id: string;
+  client?: ClientRef;
+  site?: Pick<ClientSite, 'id' | 'name'>;
+  user?: Pick<ClientUser, 'userId' | 'name' | 'email'>;
+}
+
+export interface UpdateClientUserAssociationInput {
+  id: string;
+  site: { id: string };
+}
