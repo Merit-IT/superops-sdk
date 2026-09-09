@@ -19,7 +19,7 @@
     "type": "git",
     "url": "git+https://github.com/merit-it/superops-sdk.git"
   },
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "engines": {
     "node": ">=18"
   },

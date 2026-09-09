@@ -1,6 +1,6 @@
 # SUPEROPS-SDK
 ### TypeScript SDK wrapping the SuperOps PSA GraphQL API (`https://api.superops.ai/msp`)
-- Only in initial version we wrapped endpoints we use for our various internal functions and services.
+- The initial version wraps the endpoints we needed first — coverage grows as more get used.
 - Anything not yet wrapped as a typed method — use the escape hatch:
 
 ```ts
@@ -36,7 +36,7 @@ What's wrapped as a typed method today
 | ServiceItem ⚠️ | `iterateServiceItems`, `getServiceItem` | — |
 | TicketConversation | `listTicketConversations` | — |
 
-⚠️ **`ServiceItem` (SuperOps' own "Service Items (Legacy)" endpoint) is real flaky. Our Tickets to support have them acknowledging but no planned fix**
+⚠️ **`ServiceItem` (SuperOps' own "Service Items (Legacy)" endpoint) is known to be flaky** — see "Retrying flaky GraphQL errors" below for the built-in mitigation.
 
 ## Features
 
@@ -55,8 +55,8 @@ What's wrapped as a typed method today
   like an MCP server that resolves credentials per incoming request.
 - Canonical `Client`, `ClientContract`, `WorklogEntry`, `ServiceCatalogItem`, etc. types —
   see [`src/types/entities.ts`](./src/types/entities.ts) for what's verified vs. best-effort.
-- **No built-in caching.** `CacheService`/`MemoryCacheStore` (the TTL + in-flight-dedup pattern
-  that `software-audit` and `quoter-middleware` had independently copy-pasted) are exported as a
+- **No built-in caching.** `CacheService`/`MemoryCacheStore` (a TTL + in-flight-dedup pattern
+  that kept getting copy-pasted across consuming services) are exported as a
   standalone, composable primitive — but the SDK doesn't wrap calls in it automatically, since
   what to cache, for how long, and when to invalidate varies per consumer and the SDK can't
   guess that correctly on your behalf. See "Caching" below.
@@ -284,3 +284,7 @@ const offeredItems = await toArray(
 `withPartialPageRecovery` (wrapping any `fetchPage`-shaped callback passed to `iteratePages`) is
 also exported directly, if you need this same recovery for an endpoint that doesn't have it
 built in yet.
+
+## License
+
+[Apache License 2.0](./LICENSE)
