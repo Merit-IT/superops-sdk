@@ -625,3 +625,370 @@ export interface TicketConversation {
   attachments?: Attachment[];
   type?: string;
 }
+
+// ---- Create/update mutation inputs -----------------------------------------
+
+export interface CreateBusinessHourInput {
+  day: string;
+  start: string;
+  end: string;
+}
+
+/** Also used as the nested `hqSite` shape when creating a client via `CreateClientInputV2`. */
+export interface CreateClientSiteInput {
+  name: string;
+  working24x7: boolean;
+  businessHour?: CreateBusinessHourInput[];
+  holidayList?: { id: string };
+  timezoneCode: string;
+  line1?: string;
+  line2?: string;
+  line3?: string;
+  city?: string;
+  postalCode?: string;
+  countryCode?: string;
+  stateCode?: string;
+  client?: { accountId: string };
+}
+
+export interface UpdateClientSiteInput {
+  id: string;
+  name?: string;
+  timezoneCode?: string;
+  working24x7?: boolean;
+  businessHour?: CreateBusinessHourInput[];
+  holidayList?: { id: string };
+  line1?: string;
+  line2?: string;
+  line3?: string;
+  city?: string;
+  postalCode?: string;
+  countryCode?: string;
+  stateCode?: string;
+  contactNumber?: string;
+}
+
+/** `createClient`/`CreateClientInput` are deprecated by SuperOps in favor of this input. */
+export interface CreateClientInputV2 {
+  name: string;
+  stage?: string;
+  status?: string;
+  emailDomains?: string[];
+  accountManager?: { userId: string };
+  addTechnicianGroups?: { groupId: string }[];
+  customFields?: Record<string, Json>;
+  hqSite: CreateClientSiteInput;
+}
+
+export interface UpdateClientInput {
+  accountId: string;
+  name?: string;
+  stage?: string;
+  status?: string;
+  emailDomains?: string[];
+  accountManager?: { userId: string };
+  primaryContact?: { userId: string };
+  secondaryContact?: { userId: string };
+  hqSite?: { id: string };
+  addTechnicianGroups?: { groupId: string }[];
+  deleteTechnicianGroups?: { groupId: string }[];
+  customFields?: Record<string, Json>;
+}
+
+export interface CreateClientUserAssociationInput {
+  client: { accountId: string };
+  site: { id: string };
+  /** Optional when creating a brand-new client user. */
+  user?: { userId: string };
+}
+
+export interface CreateClientUserInput {
+  firstName: string;
+  lastName?: string;
+  email: string;
+  contactNumber?: string;
+  reportingManager?: { userId: string };
+  role: { roleId: string };
+  addAssociations?: CreateClientUserAssociationInput[];
+  customFields?: Record<string, Json>;
+}
+
+export interface UpdateClientUserInput {
+  userId: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  contactNumber?: string;
+  reportingManager?: { userId: string };
+  site?: { id: string };
+  role?: { roleId: string };
+  customFields?: Record<string, Json>;
+}
+
+export interface RecurringContractInput {
+  recurringMode: RecurringMode | string;
+  frequencyDurationUnit: FrequencyDurationUnit | string;
+  frequencyInterval: number;
+  /** Required if `recurringMode` is `'ADVANCE'`. */
+  billingOffset?: number;
+}
+
+export interface CreateBillableContractInput {
+  chargeItem: { itemId: string };
+  sellingPriceOverridden: boolean;
+  sellingPrice?: Pricing;
+  discountRate?: string;
+  billableSiteType: string;
+  /** Only used when `billableSiteType` is `'INCLUDED'`. */
+  addSites?: { id: string }[];
+  recurringContract: RecurringContractInput;
+  change: BillableContractQuantityChangeInput;
+}
+
+export interface CreateContractInput {
+  description?: string;
+  billableContract: CreateBillableContractInput;
+}
+
+export interface CreateClientContractInput {
+  client: { accountId: string };
+  contract: CreateContractInput;
+  startDate: string;
+  endDate?: string;
+}
+
+export interface FieldOption {
+  id?: string;
+  value?: string;
+  description?: string;
+  order?: number;
+}
+
+/** Generic custom-field type returned by `createField`/`updateField` — spans multiple modules (TICKET, COMPANY_USER, ...). */
+export interface Field {
+  id: string;
+  module?: string;
+  columnName?: string;
+  label?: string;
+  description?: string;
+  fieldType?: string;
+  options?: FieldOption[];
+  showToRequester?: boolean;
+  fieldCategory?: string;
+  mandatoryOnCreate?: boolean;
+  mandatoryOnClosure?: boolean;
+  parentField?: Pick<Field, 'id' | 'label'>;
+}
+
+export interface CreateFieldOptionInput {
+  value: string;
+  description?: string;
+  order: number;
+  parentOption?: { id: string };
+}
+
+export interface UpdateFieldOptionInput {
+  id: string;
+  value?: string;
+  description?: string;
+  order?: number;
+}
+
+/**
+ * `createClientCustomField` is deprecated by SuperOps in favor of this generic `createField`
+ * mutation — `module` (e.g. `'COMPANY_USER'` for client custom fields, `'TICKET'` for ticket
+ * custom fields) is a free-form string per schema, not a closed enum.
+ */
+export interface CreateFieldInput {
+  label: string;
+  description?: string;
+  fieldType: string;
+  showToRequester?: boolean;
+  module: string;
+  mandatoryOnCreate?: boolean;
+  mandatoryOnClosure?: boolean;
+  addOptions?: CreateFieldOptionInput[];
+  parentField?: { id: string };
+}
+
+export interface UpdateFieldInput {
+  id: string;
+  label?: string;
+  description?: string;
+  showToRequester?: boolean;
+  mandatoryOnCreate?: boolean;
+  mandatoryOnClosure?: boolean;
+  addOptions?: CreateFieldOptionInput[];
+  updateOptions?: UpdateFieldOptionInput[];
+  deleteOptions?: { id: string }[];
+}
+
+export interface CreateAttachmentInput {
+  fileName: string;
+  originalFileName: string;
+  fileSize: string;
+}
+
+export interface CreateTicketInput {
+  subject: string;
+  description?: string;
+  descriptionAttachments?: CreateAttachmentInput[];
+  client: { accountId: string };
+  site?: { id: string };
+  requester?: { userId: string };
+  techGroup?: { groupId: string };
+  technician?: { userId: string };
+  status?: string;
+  requestType?: string;
+  source: string;
+  priority?: string;
+  impact?: string;
+  urgency?: string;
+  category?: string;
+  subcategory?: string;
+  cause?: string;
+  subcause?: string;
+  sla?: { id: string };
+  resolutionCode?: string;
+  customFields?: Record<string, Json>;
+  addAdditionalRequester?: { userId: string }[];
+  addFollowers?: { userId: string }[];
+  createdTime?: string;
+  updatedTime?: string;
+  subSource?: string;
+  sourceReferenceId?: string;
+  addAssets?: { assetId: string }[];
+  suppressCloseNotification?: boolean;
+  firstResponseTime?: string;
+  resolutionTime?: string;
+}
+
+export interface UpdateTicketInput {
+  ticketId: string;
+  subject?: string;
+  client?: { accountId: string };
+  site?: { id: string };
+  requester?: { userId: string };
+  techGroup?: { groupId: string };
+  technician?: { userId: string };
+  status?: string;
+  priority?: string;
+  impact?: string;
+  urgency?: string;
+  category?: string;
+  subcategory?: string;
+  cause?: string;
+  subcause?: string;
+  resolutionCode?: string;
+  requestType?: string;
+  source?: string;
+  customFields?: Record<string, Json>;
+  addAdditionalRequester?: { userId: string }[];
+  deleteAdditionalRequester?: { userId: string }[];
+  addFollowers?: { userId: string }[];
+  deleteFollowers?: { userId: string }[];
+  suppressCloseNotification?: boolean;
+  firstResponseTime?: string;
+  resolutionTime?: string;
+}
+
+export interface CreateTaskInput {
+  title: string;
+  description?: string;
+  status: string;
+  estimatedTime?: number;
+  scheduledStartDate?: string;
+  dueDate?: string;
+  technician?: { userId: string };
+  techGroup?: { groupId: string };
+  module: string;
+  /** Required if `module` is `'TICKET'`. */
+  ticket?: { ticketId: string };
+}
+
+export interface CreateWorklogEntryInput {
+  serviceItem?: { itemId: string };
+  billable?: boolean;
+  afterHours?: boolean;
+  qty: string;
+  unitPrice?: string;
+  billDateTime: string;
+  notes?: string;
+  workItem: { workId: string; module: string };
+  technician?: { userId: string };
+}
+
+export interface UpdateWorklogEntryInput {
+  itemId: string;
+  serviceItem?: { itemId: string };
+  billable?: boolean;
+  afterHours?: boolean;
+  qty?: string;
+  unitPrice?: string;
+  billDateTime?: string;
+  notes?: string;
+}
+
+export interface CreateServiceItemInput {
+  name: string;
+  description?: string;
+  quantityType: string;
+  category?: { categoryId: string };
+  useAsWorklogItem?: boolean;
+  unitPrice?: string;
+  businessHoursUnitPrice?: string;
+  afterHoursUnitPrice?: string;
+  roundUpValue?: number;
+  quantity?: string;
+  amount?: string;
+  adjustBlockItemAgainstAllItems?: boolean;
+  addBlockItemAdjustedItems?: { itemId: string }[];
+  blockItemUsedIn?: string;
+  salesTaxEnabled?: boolean;
+  salesTax?: { taxId: string };
+}
+
+export interface CreateTaxRateInput {
+  name: string;
+  rateValue: string;
+}
+
+export interface CreateTaxInput {
+  name: string;
+  addRates: CreateTaxRateInput[];
+}
+
+export interface UpdateServiceTypeItemInput {
+  addBundledItems?: { itemId: string }[];
+  deleteBundledItems?: { itemId: string }[];
+  hourlyServiceTypeItem?: { roundUpValue?: number };
+  redeemableServiceBundle?: {
+    applicableType?: RedeemableBundleApplicableType;
+    applicableHours?: RedeemableBundleApplicableHours;
+    redeemableQuantity?: string;
+  };
+}
+
+export interface UpdateServiceCatalogItemInput {
+  itemId: string;
+  name?: string;
+  description?: string;
+  category?: { categoryId: string };
+  offerAsWorklogItem?: boolean;
+  taxable?: boolean;
+  salesTax?: { taxId: string };
+  costPrice?: Pricing;
+  sellingPrice?: Pricing;
+  serviceTypeItem?: UpdateServiceTypeItemInput;
+}
+
+export interface UpdateInvoiceInput {
+  invoiceId: string;
+  statusEnum?: InvoiceStatus | string;
+  invoiceDate?: string;
+  dueDate?: string;
+  paymentDate?: string;
+  paymentMethod?: { paymentMethodId: string };
+  paymentReference?: string;
+  invoicePaymentTerm?: { paymentTermId: string };
+}

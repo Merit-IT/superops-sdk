@@ -845,3 +845,402 @@ export const GET_TICKET_CONVERSATION_LIST = /* GraphQL */ `
     }
   }
 `;
+
+/** `createClient` is deprecated by SuperOps in favor of this — see `CreateClientInputV2`. */
+export const CREATE_CLIENT_V2 = /* GraphQL */ `
+  mutation CreateClientV2($input: CreateClientInputV2!) {
+    createClientV2(input: $input) {
+      accountId
+      name
+      stage
+      status
+      emailDomains
+      accountManager
+      primaryContact
+      secondaryContact
+      hqSite
+      technicianGroups
+      customFields
+      createdTime
+      updatedTime
+    }
+  }
+`;
+
+export const UPDATE_CLIENT = /* GraphQL */ `
+  mutation UpdateClient($input: UpdateClientInput!) {
+    updateClient(input: $input) {
+      accountId
+      name
+      stage
+      status
+      emailDomains
+      accountManager
+      primaryContact
+      secondaryContact
+      hqSite
+      technicianGroups
+      customFields
+      createdTime
+      updatedTime
+    }
+  }
+`;
+
+export const CREATE_CLIENT_USER = /* GraphQL */ `
+  mutation CreateClientUser($input: CreateClientUserInput!) {
+    createClientUser(input: $input) {
+      userId
+      firstName
+      lastName
+      name
+      email
+      contactNumber
+      reportingManager
+      role
+      site
+      client
+      customFields
+    }
+  }
+`;
+
+export const UPDATE_CLIENT_USER = /* GraphQL */ `
+  mutation UpdateClientUser($input: UpdateClientUserInput!) {
+    updateClientUser(input: $input) {
+      userId
+      firstName
+      lastName
+      name
+      email
+      contactNumber
+      reportingManager
+      role
+      site
+      client
+      customFields
+    }
+  }
+`;
+
+/** Field selection matches `GET_CLIENT_SITE` for consistency. `installerInfo` omitted — unresolved nested type. */
+export const CREATE_CLIENT_SITE = /* GraphQL */ `
+  mutation CreateClientSite($input: CreateClientSiteInput!) {
+    createClientSite(input: $input) {
+      id
+      name
+      businessHour {
+        day
+        end
+        start
+      }
+      holidayList {
+        id
+        name
+      }
+      timezoneCode
+      working24x7
+      line1
+      line2
+      line3
+      city
+      postalCode
+      countryCode
+      stateCode
+      contactNumber
+      client
+      hq
+    }
+  }
+`;
+
+export const UPDATE_CLIENT_SITE = /* GraphQL */ `
+  mutation UpdateClientSite($input: UpdateClientSiteInput!) {
+    updateClientSite(input: $input) {
+      id
+      name
+      businessHour {
+        day
+        end
+        start
+      }
+      holidayList {
+        id
+        name
+      }
+      timezoneCode
+      working24x7
+      line1
+      line2
+      line3
+      city
+      postalCode
+      countryCode
+      stateCode
+      contactNumber
+      client
+      hq
+    }
+  }
+`;
+
+/** SuperOps' mutation returns `ID!`, not a `ClientContract` object — same shape as `updateClientContract`. */
+export const CREATE_CLIENT_CONTRACT = /* GraphQL */ `
+  mutation CreateClientContract($input: CreateClientContractInput!) {
+    createClientContract(input: $input)
+  }
+`;
+
+/** `createClientCustomField` is deprecated by SuperOps in favor of this generic `createField` mutation. */
+export const CREATE_FIELD = /* GraphQL */ `
+  mutation CreateField($input: CreateFieldInput!) {
+    createField(input: $input) {
+      id
+      module
+      columnName
+      label
+      description
+      fieldType
+      options {
+        id
+        value
+        description
+        order
+      }
+      showToRequester
+      fieldCategory
+      mandatoryOnCreate
+      mandatoryOnClosure
+      parentField {
+        id
+        label
+      }
+    }
+  }
+`;
+
+export const UPDATE_FIELD = /* GraphQL */ `
+  mutation UpdateField($input: UpdateFieldInput!) {
+    updateField(input: $input) {
+      id
+      module
+      columnName
+      label
+      description
+      fieldType
+      options {
+        id
+        value
+        description
+        order
+      }
+      showToRequester
+      fieldCategory
+      mandatoryOnCreate
+      mandatoryOnClosure
+      parentField {
+        id
+        label
+      }
+    }
+  }
+`;
+
+/** Field selection matches `GET_TICKET_LIST`'s ticket fields for consistency. */
+const TICKET_FIELDS = /* GraphQL */ `
+  ticketId
+  displayId
+  subject
+  source
+  client
+  site
+  requester
+  additionalRequester
+  followers
+  techGroup
+  technician
+  status
+  approvalStatus
+  priority
+  impact
+  urgency
+  category
+  subcategory
+  cause
+  subcause
+  requestType
+  resolutionCode
+  resolutionTime
+  resolutionDueTime
+  resolutionViolated
+  firstResponseTime
+  firstResponseDueTime
+  firstResponseViolated
+  sla
+  worklogTimespent
+  createdTime
+  updatedTime
+  customFields
+`;
+
+export const CREATE_TICKET = /* GraphQL */ `
+  mutation CreateTicket($input: CreateTicketInput!) {
+    createTicket(input: $input) {
+      ${TICKET_FIELDS}
+    }
+  }
+`;
+
+export const UPDATE_TICKET = /* GraphQL */ `
+  mutation UpdateTicket($input: UpdateTicketInput!) {
+    updateTicket(input: $input) {
+      ${TICKET_FIELDS}
+    }
+  }
+`;
+
+/** Field selection matches `GET_TASK_LIST`'s task fields for consistency. */
+export const CREATE_TASK = /* GraphQL */ `
+  mutation CreateTask($input: CreateTaskInput!) {
+    createTask(input: $input) {
+      taskId
+      displayId
+      title
+      description
+      status
+      estimatedTime
+      scheduledStartDate
+      dueDate
+      overdue
+      actualStartDate
+      actualEndDate
+      technician
+      techGroup
+      workItem
+      ticket
+      taskOrder
+      priority
+    }
+  }
+`;
+
+/** `input` is a list — SuperOps creates worklog entries in bulk. Field selection matches `GET_WORKLOG_ENTRIES`. */
+export const CREATE_WORKLOG_ENTRIES = /* GraphQL */ `
+  mutation CreateWorklogEntries($input: [CreateWorklogEntryInput!]!) {
+    createWorklogEntries(input: $input) {
+      itemId
+      status
+      billDateTime
+      workItem
+      notes
+      unitPrice
+      serviceItem
+      afterHours
+      billable
+      qty
+      technician
+    }
+  }
+`;
+
+export const UPDATE_WORKLOG_ENTRY = /* GraphQL */ `
+  mutation UpdateWorklogEntry($input: UpdateWorklogEntryInput!) {
+    updateWorklogEntry(input: $input) {
+      itemId
+      status
+      billDateTime
+      workItem
+      notes
+      unitPrice
+      serviceItem
+      afterHours
+      billable
+      qty
+      technician
+    }
+  }
+`;
+
+/** Field selection matches `GET_SERVICE_ITEM` for consistency. */
+export const CREATE_SERVICE_ITEM = /* GraphQL */ `
+  mutation CreateServiceItem($input: CreateServiceItemInput!) {
+    createServiceItem(input: $input) {
+      itemId
+      name
+      description
+      quantityType
+      category {
+        categoryId
+        name
+      }
+      useAsWorklogItem
+      unitPrice
+      businessHoursUnitPrice
+      afterHoursUnitPrice
+      roundUpValue
+      quantity
+      amount
+      adjustBlockItemAgainstAllItems
+      blockItemUsedIn
+      salesTaxEnabled
+      salesTax {
+        taxId
+        name
+        totalRate
+      }
+    }
+  }
+`;
+
+/** Field selection matches `GET_TAX`/`GET_TAX_LIST` for consistency. */
+export const CREATE_TAX = /* GraphQL */ `
+  mutation CreateTax($input: CreateTaxInput!) {
+    createTax(input: $input) {
+      taxId
+      name
+      rates {
+        rateId
+        name
+        rateValue
+      }
+      totalRate
+    }
+  }
+`;
+
+export const UPDATE_SERVICE_CATALOG_ITEM = /* GraphQL */ `
+  mutation UpdateServiceCatalogItem($input: UpdateServiceCatalogItemInput!) {
+    updateServiceCatalogItem(input: $input) {
+      ${SERVICE_CATALOG_ITEM_FIELDS}
+    }
+  }
+`;
+
+export const UPDATE_INVOICE = /* GraphQL */ `
+  mutation UpdateInvoice($input: UpdateInvoiceInput!) {
+    updateInvoice(input: $input) {
+      invoiceId
+      displayId
+      client
+      site
+      invoiceDate
+      dueDate
+      statusEnum
+      sentToClient
+      items {
+        ${INVOICE_ITEM_FIELDS}
+      }
+      discountAmount
+      additionalDiscount
+      additionalDiscountRate
+      totalAmount
+      notes
+      paymentDate
+      paymentMethod
+      paymentReference
+      invoicePaymentTerm
+      paymentLink
+      amountDue
+    }
+  }
+`;

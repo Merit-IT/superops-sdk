@@ -27,6 +27,25 @@ import type {
   ServiceItem,
   TicketConversation,
   UpdateClientContractInput,
+  CreateClientInputV2,
+  UpdateClientInput,
+  CreateClientUserInput,
+  UpdateClientUserInput,
+  CreateClientSiteInput,
+  UpdateClientSiteInput,
+  CreateClientContractInput,
+  Field,
+  CreateFieldInput,
+  UpdateFieldInput,
+  CreateTicketInput,
+  UpdateTicketInput,
+  CreateTaskInput,
+  CreateWorklogEntryInput,
+  UpdateWorklogEntryInput,
+  CreateServiceItemInput,
+  CreateTaxInput,
+  UpdateServiceCatalogItemInput,
+  UpdateInvoiceInput,
 } from './types/entities';
 import * as GQL from './gql/operations';
 
@@ -147,6 +166,25 @@ export class SuperOpsClient {
     return res.getClient;
   }
 
+  /** `createClient` is deprecated by SuperOps in favor of `createClientV2` — this wraps the latter. */
+  async createClient<T = Client>(input: CreateClientInputV2, opts: CallOpts = {}): Promise<T> {
+    const res = await this.http.execute<{ createClientV2: T }>(
+      opts.query ?? GQL.CREATE_CLIENT_V2,
+      { input },
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.createClientV2;
+  }
+
+  async updateClient<T = Client>(input: UpdateClientInput, opts: CallOpts = {}): Promise<T> {
+    const res = await this.http.execute<{ updateClient: T }>(
+      opts.query ?? GQL.UPDATE_CLIENT,
+      { input },
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.updateClient;
+  }
+
   /** No `input` argument, no pagination wrapper — returns a bare array. */
   async listClientCustomFields<T = CustomField>(opts: CallOpts = {}): Promise<T[]> {
     const res = await this.http.execute<{ getClientCustomFieldList: T[] }>(
@@ -164,6 +202,25 @@ export class SuperOpsClient {
       { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
     );
     return res.getClientCustomField;
+  }
+
+  /** `createClientCustomField` is deprecated by SuperOps in favor of this generic `createField` mutation. */
+  async createField<T = Field>(input: CreateFieldInput, opts: CallOpts = {}): Promise<T> {
+    const res = await this.http.execute<{ createField: T }>(
+      opts.query ?? GQL.CREATE_FIELD,
+      { input },
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.createField;
+  }
+
+  async updateField<T = Field>(input: UpdateFieldInput, opts: CallOpts = {}): Promise<T> {
+    const res = await this.http.execute<{ updateField: T }>(
+      opts.query ?? GQL.UPDATE_FIELD,
+      { input },
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.updateField;
   }
 
   async *iterateClientUsers<T = ClientUser>(
@@ -192,6 +249,24 @@ export class SuperOpsClient {
     return res.getClientUser;
   }
 
+  async createClientUser<T = ClientUser>(input: CreateClientUserInput, opts: CallOpts = {}): Promise<T> {
+    const res = await this.http.execute<{ createClientUser: T }>(
+      opts.query ?? GQL.CREATE_CLIENT_USER,
+      { input },
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.createClientUser;
+  }
+
+  async updateClientUser<T = ClientUser>(input: UpdateClientUserInput, opts: CallOpts = {}): Promise<T> {
+    const res = await this.http.execute<{ updateClientUser: T }>(
+      opts.query ?? GQL.UPDATE_CLIENT_USER,
+      { input },
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.updateClientUser;
+  }
+
   /** `installerInfo` omitted — unresolved nested type. */
   async getClientSite<T = ClientSite>(id: string, opts: CallOpts = {}): Promise<T> {
     const res = await this.http.execute<{ getClientSite: T }>(
@@ -200,6 +275,26 @@ export class SuperOpsClient {
       { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
     );
     return res.getClientSite;
+  }
+
+  /** `installerInfo` omitted — unresolved nested type. */
+  async createClientSite<T = ClientSite>(input: CreateClientSiteInput, opts: CallOpts = {}): Promise<T> {
+    const res = await this.http.execute<{ createClientSite: T }>(
+      opts.query ?? GQL.CREATE_CLIENT_SITE,
+      { input },
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.createClientSite;
+  }
+
+  /** `installerInfo` omitted — unresolved nested type. */
+  async updateClientSite<T = ClientSite>(input: UpdateClientSiteInput, opts: CallOpts = {}): Promise<T> {
+    const res = await this.http.execute<{ updateClientSite: T }>(
+      opts.query ?? GQL.UPDATE_CLIENT_SITE,
+      { input },
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.updateClientSite;
   }
 
   // ---- Contracts ----------------------------------------------------------
@@ -239,6 +334,16 @@ export class SuperOpsClient {
     return res.updateClientContract;
   }
 
+  /** Returns the new contract's bare ID — SuperOps' mutation returns `ID!`, not a `ClientContract` object. */
+  async createClientContract(input: CreateClientContractInput, opts: CallOpts = {}): Promise<string> {
+    const res = await this.http.execute<{ createClientContract: string }>(
+      opts.query ?? GQL.CREATE_CLIENT_CONTRACT,
+      { input },
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.createClientContract;
+  }
+
   // ---- Tickets --------------------------------------------------------------
 
   async *iterateTickets<T = Ticket>(
@@ -271,6 +376,24 @@ export class SuperOpsClient {
     // The envelope itself, or its `tickets` field specifically, can independently resolve
     // to null in a valid, error-free response — guarantee the declared return shape either way.
     return { tickets: res.getTicketList?.tickets ?? [], listInfo: res.getTicketList?.listInfo ?? EMPTY_LIST_INFO };
+  }
+
+  async createTicket<T = Ticket>(input: CreateTicketInput, opts: CallOpts = {}): Promise<T> {
+    const res = await this.http.execute<{ createTicket: T }>(
+      opts.query ?? GQL.CREATE_TICKET,
+      { input },
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.createTicket;
+  }
+
+  async updateTicket<T = Ticket>(input: UpdateTicketInput, opts: CallOpts = {}): Promise<T> {
+    const res = await this.http.execute<{ updateTicket: T }>(
+      opts.query ?? GQL.UPDATE_TICKET,
+      { input },
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.updateTicket;
   }
 
   /** Bare array for one ticket, no pagination. */
@@ -344,6 +467,28 @@ export class SuperOpsClient {
     );
   }
 
+  /** SuperOps creates worklog entries in bulk — `input` is a list, response is `[WorklogEntry]`. */
+  async createWorklogEntries<T = WorklogEntry>(
+    input: CreateWorklogEntryInput[],
+    opts: CallOpts = {},
+  ): Promise<T[]> {
+    const res = await this.http.execute<{ createWorklogEntries: T[] }>(
+      opts.query ?? GQL.CREATE_WORKLOG_ENTRIES,
+      { input },
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.createWorklogEntries ?? [];
+  }
+
+  async updateWorklogEntry<T = WorklogEntry>(input: UpdateWorklogEntryInput, opts: CallOpts = {}): Promise<T> {
+    const res = await this.http.execute<{ updateWorklogEntry: T }>(
+      opts.query ?? GQL.UPDATE_WORKLOG_ENTRY,
+      { input },
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.updateWorklogEntry;
+  }
+
   // ---- Service catalog ----------------------------------------------------
 
   async *iterateServiceCatalogItems<T = ServiceCatalogItem>(
@@ -383,6 +528,18 @@ export class SuperOpsClient {
     return res.getServiceCatalogItem;
   }
 
+  async updateServiceCatalogItem<T = ServiceCatalogItem>(
+    input: UpdateServiceCatalogItemInput,
+    opts: CallOpts = {},
+  ): Promise<T> {
+    const res = await this.http.execute<{ updateServiceCatalogItem: T }>(
+      opts.query ?? GQL.UPDATE_SERVICE_CATALOG_ITEM,
+      { input },
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.updateServiceCatalogItem;
+  }
+
   /** Bare array, no pagination — SuperOps has no `input`/`listInfo` for this one, so it's a plain fetch. */
   async listServiceCategories<T = ServiceCategory>(opts: CallOpts = {}): Promise<T[]> {
     const res = await this.http.execute<{ getServiceCategoryList: T[] }>(
@@ -416,6 +573,16 @@ export class SuperOpsClient {
       { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
     );
     return res.getServiceItem;
+  }
+
+  /** No `updateServiceItem` mutation exists in SuperOps' schema — only create is available. */
+  async createServiceItem<T = ServiceItem>(input: CreateServiceItemInput, opts: CallOpts = {}): Promise<T> {
+    const res = await this.http.execute<{ createServiceItem: T }>(
+      opts.query ?? GQL.CREATE_SERVICE_ITEM,
+      { input },
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.createServiceItem;
   }
 
   // ---- Invoices ------------------------------------------------------------
@@ -470,6 +637,15 @@ export class SuperOpsClient {
     return res.createInvoice;
   }
 
+  async updateInvoice<T = Invoice>(input: UpdateInvoiceInput, opts: CallOpts = {}): Promise<T> {
+    const res = await this.http.execute<{ updateInvoice: T }>(
+      opts.query ?? GQL.UPDATE_INVOICE,
+      { input },
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.updateInvoice;
+  }
+
    async *iterateInvoiceItems<T = InvoiceItem>(
     input?: ListInfoInput,
     opts: CallOpts = {},
@@ -508,6 +684,16 @@ export class SuperOpsClient {
       { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
     );
     return res.getTax;
+  }
+
+  /** No `updateTax` mutation exists in SuperOps' schema — only create is available. */
+  async createTax<T = Tax>(input: CreateTaxInput, opts: CallOpts = {}): Promise<T> {
+    const res = await this.http.execute<{ createTax: T }>(
+      opts.query ?? GQL.CREATE_TAX,
+      { input },
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.createTax;
   }
 
   // ---- Reference lists (bare arrays, no pagination) ------------------------
@@ -588,6 +774,16 @@ export class SuperOpsClient {
       );
       return { items: res.getTaskList?.tasks ?? [], listInfo: res.getTaskList?.listInfo ?? EMPTY_LIST_INFO };
     });
+  }
+
+  /** No `updateTask` mutation exists in SuperOps' schema — only create is available. */
+  async createTask<T = Task>(input: CreateTaskInput, opts: CallOpts = {}): Promise<T> {
+    const res = await this.http.execute<{ createTask: T }>(
+      opts.query ?? GQL.CREATE_TASK,
+      { input },
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.createTask;
   }
 }
 
