@@ -26,6 +26,7 @@ export async function* iteratePages<T>(
   }
 
   const maxPages = options.maxPages ?? 1000;
+  let totalYielded = 0;
   for (let page = 1; page <= maxPages; page++) {
     const result = await fetchPage(page);
     if (Array.isArray(result)) {
@@ -38,16 +39,17 @@ export async function* iteratePages<T>(
       yield [];
       return;
     }
-    yield result.items ?? [];
+    const items = result.items ?? [];
+    yield items;
+    totalYielded += items.length;
 
-    // A response that has a listInfo envelope but no `hasMore` KEY at all (as opposed to the
-    // key being present with value `false` or, per SuperOps, sometimes legitimately `null` on
-    // the last page) almost always means a caller-supplied `query` override (see the README's
-    // "Overriding the default field selection" section) forgot to select `listInfo { hasMore }`.
-    // GraphQL omits unselected fields entirely rather than nulling them, so key-presence is what
-    // actually distinguishes "not selected" (throw) from "selected but the server returned null"
-    // (treat as done, same as `false`) - checking `typeof === 'boolean'` conflated the two and
-    // rejected SuperOps' own default query's legitimate `hasMore: null` response.
+    // A response that has a listInfo envelope but no `hasMore` KEY at all almost always means a
+    // caller-supplied `query` override (see the README's "Overriding the default field
+    // selection" section) forgot to select `listInfo { hasMore }`. GraphQL omits unselected
+    // fields entirely rather than nulling them, so key-presence is what distinguishes "not
+    // selected" from "selected but the server returned something falsy for it" - fail loudly
+    // only on the former, since the latter still needs to fall through to the totalCount-based
+    // inference below.
     if (result.listInfo && !('hasMore' in result.listInfo)) {
       throw new Error(
         `iteratePages: page ${page}'s response has a listInfo envelope but no \`hasMore\` key ` +
@@ -56,7 +58,21 @@ export async function* iteratePages<T>(
           'would otherwise silently return only this page.',
       );
     }
-    if (!result.listInfo?.hasMore) return;
+
+    const hasMore = result.listInfo?.hasMore;
+    if (hasMore === true) continue;
+    if (hasMore === false) return;
+
+    // hasMore came back `null` — observed from SuperOps' own default queries (e.g.
+    // getServiceCatalogItemList), and NOT reliably only on the true last page: it can appear
+    // mid-pagination too, so treating it the same as `false` silently truncates results (lost
+    // 89 of 98 real catalog items in testing). Fall back to totalCount, which SuperOps has
+    // consistently populated correctly: keep going until we've accumulated that many rows.
+    // If totalCount is itself unusable, the only safe option left is to keep paginating - an
+    // empty page (caught above via `!result`/empty items) is what ends it in that case.
+    const totalCount = result.listInfo?.totalCount;
+    if (typeof totalCount === 'number' && totalYielded >= totalCount) return;
+    if (items.length === 0) return;
   }
 }
 

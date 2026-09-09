@@ -50,15 +50,29 @@ describe('iteratePages', () => {
 
   // SuperOps' own default query for getServiceCatalogItemList (which does select
   // `listInfo { hasMore }`) has been observed returning `hasMore: null` rather than `false` on
-  // the last page. That's a legitimate response with the key present, distinct from a caller
-  // forgetting to select the field (key absent, covered above) - must stop cleanly, not throw.
-  it('treats hasMore: null (key present) as no more pages, not a missing-selection error', async () => {
+  // the true last page. That's a legitimate response with the key present, distinct from a
+  // caller forgetting to select the field (key absent, covered above) - must stop cleanly, not
+  // throw, when totalCount confirms everything's been fetched.
+  it('treats hasMore: null (key present) as no more pages once totalCount is satisfied', async () => {
     const fetchPage = async (page: number) => ({
       items: [page],
       listInfo: { totalCount: 1, page, pageSize: 1, hasMore: null } as unknown as { hasMore: boolean },
     });
 
     expect(await toArray(iteratePages(fetchPage))).toEqual([1]);
+  });
+
+  // Regression test: SuperOps returned `hasMore: null` on a page that was NOT actually the last
+  // one (a real production case - getServiceCatalogItemList returned only 9 of 98 items before
+  // this fix, because null was wrongly treated the same as `false`). totalCount must be trusted
+  // over a null hasMore so pagination keeps going instead of silently truncating.
+  it('keeps paginating past a null hasMore that is not yet the last page, per totalCount', async () => {
+    const fetchPage = async (page: number) => ({
+      items: [page],
+      listInfo: { totalCount: 3, page, pageSize: 1, hasMore: null } as unknown as { hasMore: boolean },
+    });
+
+    expect(await toArray(iteratePages(fetchPage))).toEqual([1, 2, 3]);
   });
 });
 
