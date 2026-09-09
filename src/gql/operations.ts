@@ -117,7 +117,7 @@ const CLIENT_CONTRACT_FIELDS = /* GraphQL */ `
 `;
 
 export const GET_CLIENT_CONTRACT_LIST = /* GraphQL */ `
-  query GetClientContractList($input: ListInfoInput) {
+  query GetClientContractList($input: ListInfoInput!) {
     getClientContractList(input: $input) {
       clientContracts {
         ${CLIENT_CONTRACT_FIELDS}
@@ -216,7 +216,7 @@ const SERVICE_CATALOG_ITEM_FIELDS = /* GraphQL */ `
 `;
 
 export const GET_SERVICE_CATALOG_ITEM_LIST = /* GraphQL */ `
-  query GetServiceCatalogItemList($input: ListInfoInput) {
+  query GetServiceCatalogItemList($input: ListInfoInput!) {
     getServiceCatalogItemList(input: $input) {
       items {
         ${SERVICE_CATALOG_ITEM_FIELDS}
@@ -659,7 +659,7 @@ export const GET_URGENCY_LIST = /* GraphQL */ `
 `;
 
 export const GET_TAX_LIST = /* GraphQL */ `
-  query GetTaxList($input: ListInfoInput) {
+  query GetTaxList($input: ListInfoInput!) {
     getTaxList(input: $input) {
       taxes {
         taxId
