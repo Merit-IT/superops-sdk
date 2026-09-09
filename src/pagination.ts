@@ -40,16 +40,18 @@ export async function* iteratePages<T>(
     }
     yield result.items ?? [];
 
-    // A response that has a listInfo envelope but no `hasMore` key at all (as opposed to a
-    // legitimate `hasMore: false`) almost always means a caller-supplied `query` override
-    // (see the README's "Overriding the default field selection" section) forgot to select
-    // `listInfo { hasMore }`. Silently treating that as "no more pages" would truncate the
-    // result set without any error - fail loudly instead so the mistake surfaces immediately
-    // rather than as missing rows discovered much later.
-    if (result.listInfo && typeof result.listInfo.hasMore !== 'boolean') {
+    // A response that has a listInfo envelope but no `hasMore` KEY at all (as opposed to the
+    // key being present with value `false` or, per SuperOps, sometimes legitimately `null` on
+    // the last page) almost always means a caller-supplied `query` override (see the README's
+    // "Overriding the default field selection" section) forgot to select `listInfo { hasMore }`.
+    // GraphQL omits unselected fields entirely rather than nulling them, so key-presence is what
+    // actually distinguishes "not selected" (throw) from "selected but the server returned null"
+    // (treat as done, same as `false`) - checking `typeof === 'boolean'` conflated the two and
+    // rejected SuperOps' own default query's legitimate `hasMore: null` response.
+    if (result.listInfo && !('hasMore' in result.listInfo)) {
       throw new Error(
-        `iteratePages: page ${page}'s response has a listInfo envelope but no boolean ` +
-          '`hasMore` field. If you passed a custom `query` override, make sure it selects ' +
+        `iteratePages: page ${page}'s response has a listInfo envelope but no \`hasMore\` key ` +
+          'at all. If you passed a custom `query` override, make sure it selects ' +
           '`listInfo { hasMore }` - without it, pagination cannot tell when to stop and ' +
           'would otherwise silently return only this page.',
       );

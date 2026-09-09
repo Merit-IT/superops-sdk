@@ -47,6 +47,19 @@ describe('iteratePages', () => {
 
     await expect(toArray(iteratePages(fetchPage))).rejects.toThrow(/hasMore/);
   });
+
+  // SuperOps' own default query for getServiceCatalogItemList (which does select
+  // `listInfo { hasMore }`) has been observed returning `hasMore: null` rather than `false` on
+  // the last page. That's a legitimate response with the key present, distinct from a caller
+  // forgetting to select the field (key absent, covered above) - must stop cleanly, not throw.
+  it('treats hasMore: null (key present) as no more pages, not a missing-selection error', async () => {
+    const fetchPage = async (page: number) => ({
+      items: [page],
+      listInfo: { totalCount: 1, page, pageSize: 1, hasMore: null } as unknown as { hasMore: boolean },
+    });
+
+    expect(await toArray(iteratePages(fetchPage))).toEqual([1]);
+  });
 });
 
 describe('withPartialPageRecovery', () => {
