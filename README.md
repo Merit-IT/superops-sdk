@@ -63,43 +63,16 @@ What's wrapped as a typed method today
 
 ## Install
 
-Consuming apps need a GitHub Packages auth token (a PAT with `read:packages`) in their `.npmrc`:
-
 ```
-@merit-it:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+npm install @merititllc/superops-sdk
 ```
 
-`${GITHUB_TOKEN}` is npm substituting an environment variable at install time — it isn't set by
-this repo or by `.npmrc` itself. If you don't already have one:
-
-1. **Create a token**: [github.com/settings/tokens](https://github.com/settings/tokens) → generate
-   a classic PAT (or a fine-grained token scoped to the `@merit-it` org) with the `read:packages`
-   scope.
-2. **Set it as `GITHUB_TOKEN`** in your environment, so it's there every time you open a shell:
-   - **Windows**: Start menu → "Edit the system environment variables" → *Environment Variables* →
-     add `GITHUB_TOKEN` under either *User variables* (just you) or *System variables* (needs
-     admin, applies machine-wide) → restart your terminal/IDE. Or from an elevated PowerShell:
-     `setx GITHUB_TOKEN "<token>" /M` (machine-wide) / drop `/M` for just your user.
-   - **macOS/Linux**: add `export GITHUB_TOKEN="<token>"` to your shell profile (`~/.zshrc`,
-     `~/.bashrc`, etc.) and restart your shell, or `source` the file.
-
-   Since it's a plain environment variable, `where`/`Get-ChildItem Env:` won't show you *how* it
-   was set (GUI vs. `setx` vs. shell profile) after the fact — only that it's there. If you're
-   troubleshooting an existing setup, check `[Environment]::GetEnvironmentVariable('GITHUB_TOKEN', 'User')`
-   vs. `'Machine'` in PowerShell to at least see which scope it's coming from.
-3. **Install**:
-   ```
-   npm install @merit-it/superops-sdk
-   ```
-
-CI doesn't need any of this — `.github/workflows/publish.yml` uses the `GITHUB_TOKEN` GitHub
-Actions provides automatically to every workflow run, not a personal token.
+No auth token needed — this package is published publicly on the npm registry.
 
 ## Usage
 
 ```ts
-import { createSuperOpsClient } from '@merit-it/superops-sdk';
+import { createSuperOpsClient } from '@merititllc/superops-sdk';
 
 const superops = createSuperOpsClient({
   apiKey: process.env.SUPEROPS_BEARER_TOKEN!,
@@ -138,7 +111,7 @@ const { invoices, listInfo } = await superops.getInvoicesPage({ page: 1, pageSiz
 ```
 
 ```ts
-import { toArray } from '@merit-it/superops-sdk';
+import { toArray } from '@merititllc/superops-sdk';
 
 // Stream + stop early: breaking out of the loop means no further SuperOps requests happen.
 for await (const page of superops.iterateClientContracts({ pageSize: 50 })) {
@@ -218,7 +191,7 @@ SuperOps requests) is exported standalone — wire it up around whichever calls 
 your app, with whatever keys/TTLs/invalidation fit your access patterns:
 
 ```ts
-import { CacheService, toArray } from '@merit-it/superops-sdk';
+import { CacheService, toArray } from '@merititllc/superops-sdk';
 
 const cache = new CacheService({ defaultTtlMs: 300_000 });
 
@@ -241,7 +214,7 @@ or per-call override) fills that gap — pass a predicate over the error message
 with the same backoff as everything else:
 
 ```ts
-import { createSuperOpsClient, isTransientSuperOpsError } from '@merit-it/superops-sdk';
+import { createSuperOpsClient, isTransientSuperOpsError } from '@merititllc/superops-sdk';
 
 // Client-wide default:
 const superops = createSuperOpsClient({
