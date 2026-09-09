@@ -46,6 +46,22 @@ import type {
   CreateTaxInput,
   UpdateServiceCatalogItemInput,
   UpdateInvoiceInput,
+  CreateTicketNoteInput,
+  CreateTicketConversationInput,
+  ClientUserAssociation,
+  CreateClientUserAssociationInput,
+  UpdateClientUserAssociationInput,
+  ClientStage,
+  Role,
+  Priority,
+  Impact,
+  ResolutionCode,
+  Cause,
+  Status,
+  TechnicianGroup,
+  HolidayList,
+  PaymentMethod,
+  PaymentTerm,
 } from './types/entities';
 import * as GQL from './gql/operations';
 
@@ -297,6 +313,77 @@ export class SuperOpsClient {
     return res.updateClientSite;
   }
 
+  /**
+   * `getClientSiteList` takes its own `GetClientSiteListInput!` — pagination nests under
+   * `listInfo`, with `clientId` (optional, narrows to one client's sites) as a sibling key.
+   */
+  async *iterateClientSites<T = ClientSite>(
+    input?: ListInfoInput & { clientId?: string },
+    opts: CallOpts = {},
+  ): AsyncGenerator<T[], void, void> {
+    const { clientId, ...listInfo } = input ?? {};
+    yield* iteratePages<T>(async (page) => {
+      const res = await this.http.execute<{
+        getClientSiteList: { sites: T[]; listInfo: WrappedListResponse<T>['listInfo'] };
+      }>(
+        opts.query ?? GQL.GET_CLIENT_SITE_LIST,
+        { input: { clientId, listInfo: { ...listInfo, page } } },
+        { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+      );
+      return { items: res.getClientSiteList?.sites ?? [], listInfo: res.getClientSiteList?.listInfo ?? EMPTY_LIST_INFO };
+    });
+  }
+
+  async *iterateClientUserAssociations<T = ClientUserAssociation>(
+    input?: ListInfoInput,
+    opts: CallOpts = {},
+  ): AsyncGenerator<T[], void, void> {
+    yield* iteratePages<T>(async (page) => {
+      const res = await this.http.execute<{
+        getClientUserAssociationList: { associations: T[]; listInfo: WrappedListResponse<T>['listInfo'] };
+      }>(
+        opts.query ?? GQL.GET_CLIENT_USER_ASSOCIATION_LIST,
+        { input: { ...input, page } },
+        { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+      );
+      return { items: res.getClientUserAssociationList?.associations ?? [], listInfo: res.getClientUserAssociationList?.listInfo ?? EMPTY_LIST_INFO };
+    });
+  }
+
+  async createClientUserAssociations<T = ClientUserAssociation>(
+    input: CreateClientUserAssociationInput[],
+    opts: CallOpts = {},
+  ): Promise<T[]> {
+    const res = await this.http.execute<{ createClientUserAssociations: T[] }>(
+      opts.query ?? GQL.CREATE_CLIENT_USER_ASSOCIATIONS,
+      { input },
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.createClientUserAssociations ?? [];
+  }
+
+  async updateClientUserAssociations<T = ClientUserAssociation>(
+    input: UpdateClientUserAssociationInput[],
+    opts: CallOpts = {},
+  ): Promise<T[]> {
+    const res = await this.http.execute<{ updateClientUserAssociations: T[] }>(
+      opts.query ?? GQL.UPDATE_CLIENT_USER_ASSOCIATIONS,
+      { input },
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.updateClientUserAssociations ?? [];
+  }
+
+  /** Returns the deleted associations' bare IDs. */
+  async deleteClientUserAssociations(input: { id: string }[], opts: CallOpts = {}): Promise<string[]> {
+    const res = await this.http.execute<{ deleteClientUserAssociations: string[] }>(
+      opts.query ?? GQL.DELETE_CLIENT_USER_ASSOCIATIONS,
+      { input },
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.deleteClientUserAssociations ?? [];
+  }
+
   // ---- Contracts ----------------------------------------------------------
 
   async *iterateClientContracts<T = ClientContract>(
@@ -419,6 +506,53 @@ export class SuperOpsClient {
       { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
     );
     return res.getTicketConversationList ?? [];
+  }
+
+  /**
+   * Pairs with `listTicketNotes`. Deprecated on SuperOps' schema in favor of `createNote`, but
+   * `createNote`'s shape isn't documented yet, so this wraps the existing (still-functional)
+   * `createTicketNote` mutation.
+   */
+  async createTicketNote<T = Note>(input: CreateTicketNoteInput, opts: CallOpts = {}): Promise<T> {
+    const res = await this.http.execute<{ createTicketNote: T }>(
+      opts.query ?? GQL.CREATE_TICKET_NOTE,
+      { input },
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.createTicketNote;
+  }
+
+  /** Pairs with `listTicketConversations`. */
+  async createTicketConversation<T = TicketConversation>(
+    input: CreateTicketConversationInput,
+    opts: CallOpts = {},
+  ): Promise<T> {
+    const res = await this.http.execute<{ createTicketConversation: T }>(
+      opts.query ?? GQL.CREATE_TICKET_CONVERSATION,
+      { input },
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.createTicketConversation;
+  }
+
+  /** @deprecated on SuperOps' schema — use `getFields` instead. No `input` argument, no pagination wrapper — returns a bare array. */
+  async listTicketCustomFields<T = CustomField>(opts: CallOpts = {}): Promise<T[]> {
+    const res = await this.http.execute<{ getTicketCustomFieldList: T[] }>(
+      opts.query ?? GQL.GET_TICKET_CUSTOM_FIELD_LIST,
+      undefined,
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.getTicketCustomFieldList ?? [];
+  }
+
+  /** @deprecated on SuperOps' schema — use `getField` instead. */
+  async getTicketCustomField<T = CustomField>(fieldId: string, opts: CallOpts = {}): Promise<T> {
+    const res = await this.http.execute<{ getTicketCustomField: T }>(
+      opts.query ?? GQL.GET_TICKET_CUSTOM_FIELD,
+      { input: { fieldId } },
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.getTicketCustomField;
   }
 
   // ---- Technicians ------------------------------------------------------------
@@ -732,6 +866,111 @@ export class SuperOpsClient {
       { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
     );
     return res.getSLAList ?? [];
+  }
+
+  async listClientStages<T = ClientStage>(opts: CallOpts = {}): Promise<T[]> {
+    const res = await this.http.execute<{ getClientStageList: T[] }>(
+      opts.query ?? GQL.GET_CLIENT_STAGE_LIST,
+      undefined,
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.getClientStageList ?? [];
+  }
+
+  async listRequesterRoles<T = Role>(opts: CallOpts = {}): Promise<T[]> {
+    const res = await this.http.execute<{ getRequesterRoleList: T[] }>(
+      opts.query ?? GQL.GET_REQUESTER_ROLE_LIST,
+      undefined,
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.getRequesterRoleList ?? [];
+  }
+
+  /** @deprecated on SuperOps' schema — use `getFields` instead. */
+  async listPriorities<T = Priority>(opts: CallOpts = {}): Promise<T[]> {
+    const res = await this.http.execute<{ getPriorityList: T[] }>(
+      opts.query ?? GQL.GET_PRIORITY_LIST,
+      undefined,
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.getPriorityList ?? [];
+  }
+
+  /** @deprecated on SuperOps' schema — use `getFields` instead. */
+  async listImpacts<T = Impact>(opts: CallOpts = {}): Promise<T[]> {
+    const res = await this.http.execute<{ getImpactList: T[] }>(
+      opts.query ?? GQL.GET_IMPACT_LIST,
+      undefined,
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.getImpactList ?? [];
+  }
+
+  /** @deprecated on SuperOps' schema — use `getFields` instead. */
+  async listResolutionCodes<T = ResolutionCode>(opts: CallOpts = {}): Promise<T[]> {
+    const res = await this.http.execute<{ getResolutionCodeList: T[] }>(
+      opts.query ?? GQL.GET_RESOLUTION_CODE_LIST,
+      undefined,
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.getResolutionCodeList ?? [];
+  }
+
+  /** @deprecated on SuperOps' schema — use `getFields` instead. */
+  async listCauses<T = Cause>(opts: CallOpts = {}): Promise<T[]> {
+    const res = await this.http.execute<{ getCauseList: T[] }>(
+      opts.query ?? GQL.GET_CAUSE_LIST,
+      undefined,
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.getCauseList ?? [];
+  }
+
+  /** @deprecated on SuperOps' schema — use `getFields` instead. */
+  async listStatuses<T = Status>(opts: CallOpts = {}): Promise<T[]> {
+    const res = await this.http.execute<{ getStatusList: T[] }>(
+      opts.query ?? GQL.GET_STATUS_LIST,
+      undefined,
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.getStatusList ?? [];
+  }
+
+  async listTechnicianGroups<T = TechnicianGroup>(opts: CallOpts = {}): Promise<T[]> {
+    const res = await this.http.execute<{ getTechnicianGroupList: T[] }>(
+      opts.query ?? GQL.GET_TECHNICIAN_GROUP_LIST,
+      undefined,
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.getTechnicianGroupList ?? [];
+  }
+
+  /** Each entry is a named list of holidays (e.g. "USA Holidays"), not a single holiday. */
+  async listHolidayLists<T = HolidayList>(opts: CallOpts = {}): Promise<T[]> {
+    const res = await this.http.execute<{ getHolidayList: T[] }>(
+      opts.query ?? GQL.GET_HOLIDAY_LIST,
+      undefined,
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.getHolidayList ?? [];
+  }
+
+  async listPaymentMethods<T = PaymentMethod>(opts: CallOpts = {}): Promise<T[]> {
+    const res = await this.http.execute<{ getPaymentMethodList: T[] }>(
+      opts.query ?? GQL.GET_PAYMENT_METHOD_LIST,
+      undefined,
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.getPaymentMethodList ?? [];
+  }
+
+  async listPaymentTerms<T = PaymentTerm>(opts: CallOpts = {}): Promise<T[]> {
+    const res = await this.http.execute<{ getPaymentTermList: T[] }>(
+      opts.query ?? GQL.GET_PAYMENT_TERM_LIST,
+      undefined,
+      { errorPolicy: opts.errorPolicy, retryOnGraphQLError: opts.retryOnGraphQLError },
+    );
+    return res.getPaymentTermList ?? [];
   }
 
   // ---- Offered items ------------------------------------------------------

@@ -15,7 +15,8 @@ What's wrapped as a typed method today
 |---|---|---|
 | Client | `iterateClients`, `getClient` | — 
 | ClientUser | `iterateClientUsers`, `getClientUser` | — |
-| ClientSite | `getClientSite` | — |
+| ClientSite | `iterateClientSites`, `getClientSite` | — |
+| ClientUserAssociation | `iterateClientUserAssociations` | `createClientUserAssociations`, `updateClientUserAssociations`, `deleteClientUserAssociations` |
 | CustomField | `listClientCustomFields`, `getClientCustomField` | — |
 | ClientContract | `iterateClientContracts`, `getClientContract` | `updateClientContract` |
 | WorklogEntry | `iterateWorklogEntries` | — | 
@@ -24,7 +25,9 @@ What's wrapped as a typed method today
 | Invoice | `iterateInvoices`, `getInvoicesPage`, `getInvoice` | `createInvoice` | 
 | InvoiceItem | `iterateInvoiceItems` | — |
 | Ticket | `iterateTickets`, `getTicketsPage` | — |
-| Note (ticket notes) | `listTicketNotes` | — |
+| Note (ticket notes) ⚠️deprecated | `listTicketNotes` | `createTicketNote` |
+| TicketConversation | `listTicketConversations` | `createTicketConversation` |
+| TicketCustomField ⚠️deprecated | `listTicketCustomFields`, `getTicketCustomField` | — |
 | Technician | `iterateTechnicians` | — |
 | Tax | `iterateTaxes`, `getTax` | — |
 | WorkStatus | `listWorkStatuses` | — |
@@ -34,9 +37,12 @@ What's wrapped as a typed method today
 | OfferedItem | `iterateOfferedItems` | — |
 | Task | `iterateTasks` | — |
 | ServiceItem ⚠️ | `iterateServiceItems`, `getServiceItem` | — |
-| TicketConversation | `listTicketConversations` | — |
+| Reference lists — ClientStage, Role (requester), TechnicianGroup, HolidayList, PaymentMethod, PaymentTerm | `listClientStages`, `listRequesterRoles`, `listTechnicianGroups`, `listHolidayLists`, `listPaymentMethods`, `listPaymentTerms` | — |
+| Reference lists (⚠️deprecated on SuperOps' schema — use `getFields`/`getField` instead) — Priority, Impact, ResolutionCode, Cause, Status | `listPriorities`, `listImpacts`, `listResolutionCodes`, `listCauses`, `listStatuses` | — |
 
 ⚠️ **`ServiceItem` (SuperOps' own "Service Items (Legacy)" endpoint) is known to be flaky** — see "Retrying flaky GraphQL errors" below for the built-in mitigation.
+
+⚠️**deprecated** rows wrap SuperOps mutations/queries that the schema marks `@deprecated` (in favor of `createNote`/`getField(s)`, none of which are documented with a stable shape yet) — kept because the underlying operations are still live.
 
 ## Features
 

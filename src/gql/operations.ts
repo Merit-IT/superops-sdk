@@ -406,32 +406,53 @@ export const GET_CLIENT_USER = /* GraphQL */ `
 `;
 
 
+const CLIENT_SITE_FIELDS = /* GraphQL */ `
+  id
+  name
+  businessHour {
+    day
+    end
+    start
+  }
+  holidayList {
+    id
+    name
+  }
+  timezoneCode
+  working24x7
+  line1
+  line2
+  line3
+  city
+  postalCode
+  countryCode
+  stateCode
+  contactNumber
+  client
+  hq
+`;
+
 export const GET_CLIENT_SITE = /* GraphQL */ `
   query GetClientSite($input: ClientSiteIdentifierInput!) {
     getClientSite(input: $input) {
-      id
-      name
-      businessHour {
-        day
-        end
-        start
+      ${CLIENT_SITE_FIELDS}
+    }
+  }
+`;
+
+/** Paginated — takes `GetClientSiteListInput!` (`listInfo` + optional `clientId`), unlike the single-site `getClientSite` above. */
+export const GET_CLIENT_SITE_LIST = /* GraphQL */ `
+  query GetClientSiteList($input: GetClientSiteListInput!) {
+    getClientSiteList(input: $input) {
+      sites {
+        ${CLIENT_SITE_FIELDS}
       }
-      holidayList {
-        id
-        name
+      listInfo {
+        totalCount
+        page
+        pageSize
+        hasMore
       }
-      timezoneCode
-      working24x7
-      line1
-      line2
-      line3
-      city
-      postalCode
-      countryCode
-      stateCode
-      contactNumber
-      client
-      hq
     }
   }
 `;
@@ -516,20 +537,36 @@ export const GET_TICKET_LIST = /* GraphQL */ `
   }
 `;
 
+const NOTE_FIELDS = /* GraphQL */ `
+  noteId
+  addedBy
+  addedOn
+  content
+  attachments {
+    fileName
+    originalFileName
+    fileSize
+  }
+  privacyType
+`;
+
 /** Bare array for one ticket, no `listInfo` wrapper — fetch with `paginated: false`. */
 export const GET_TICKET_NOTE_LIST = /* GraphQL */ `
   query GetTicketNoteList($input: TicketIdentifierInput!) {
     getTicketNoteList(input: $input) {
-      noteId
-      addedBy
-      addedOn
-      content
-      attachments {
-        fileName
-        originalFileName
-        fileSize
-      }
-      privacyType
+      ${NOTE_FIELDS}
+    }
+  }
+`;
+
+/**
+ * Deprecated on SuperOps' schema in favor of `createNote` — kept because `createNote`'s
+ * shape isn't documented yet. Pairs with `GET_TICKET_NOTE_LIST`/`listTicketNotes`.
+ */
+export const CREATE_TICKET_NOTE = /* GraphQL */ `
+  mutation CreateTicketNote($input: CreateTicketNoteInput!) {
+    createTicketNote(input: $input) {
+      ${NOTE_FIELDS}
     }
   }
 `;
@@ -817,31 +854,268 @@ export const GET_SERVICE_ITEM = /* GraphQL */ `
 `;
 
 /**
- * Bare array, no pagination wrapper. `user` is a bare scalar; `toUsers`/`ccUsers`/`bccUsers` are each a list of objects
+ * `user` is a bare scalar; `toUsers`/`ccUsers`/`bccUsers` are each a list of objects
  * with a nested `user` field, not bare scalars.
  */
+const TICKET_CONVERSATION_FIELDS = /* GraphQL */ `
+  conversationId
+  content
+  time
+  user
+  toUsers {
+    user
+  }
+  ccUsers {
+    user
+  }
+  bccUsers {
+    user
+  }
+  attachments {
+    fileName
+    originalFileName
+    fileSize
+  }
+  type
+`;
+
+/** Bare array, no pagination wrapper. */
 export const GET_TICKET_CONVERSATION_LIST = /* GraphQL */ `
   query GetTicketConversationList($input: TicketIdentifierInput!) {
     getTicketConversationList(input: $input) {
-      conversationId
-      content
-      time
-      user
-      toUsers {
-        user
+      ${TICKET_CONVERSATION_FIELDS}
+    }
+  }
+`;
+
+/** Pairs with `GET_TICKET_CONVERSATION_LIST`/`listTicketConversations`. */
+export const CREATE_TICKET_CONVERSATION = /* GraphQL */ `
+  mutation CreateTicketConversation($input: CreateTicketConversationInput!) {
+    createTicketConversation(input: $input) {
+      ${TICKET_CONVERSATION_FIELDS}
+    }
+  }
+`;
+
+/** @deprecated on SuperOps' schema — use `getFields`/`getField` instead. No `input` argument, no pagination wrapper — returns a bare array. */
+export const GET_TICKET_CUSTOM_FIELD_LIST = /* GraphQL */ `
+  query GetTicketCustomFieldList {
+    getTicketCustomFieldList {
+      id
+      columnName
+      label
+      description
+      fieldType
+      showToClient
+    }
+  }
+`;
+
+/** @deprecated on SuperOps' schema — use `getField` instead. */
+export const GET_TICKET_CUSTOM_FIELD = /* GraphQL */ `
+  query GetTicketCustomField($input: CustomFieldIdentifierInput) {
+    getTicketCustomField(input: $input) {
+      id
+      columnName
+      label
+      description
+      fieldType
+      showToClient
+    }
+  }
+`;
+
+const CLIENT_USER_ASSOCIATION_FIELDS = /* GraphQL */ `
+  id
+  client {
+    accountId
+    name
+  }
+  site {
+    id
+    name
+  }
+  user {
+    userId
+    name
+    email
+  }
+`;
+
+export const GET_CLIENT_USER_ASSOCIATION_LIST = /* GraphQL */ `
+  query GetClientUserAssociationList($input: ListInfoInput!) {
+    getClientUserAssociationList(input: $input) {
+      associations {
+        ${CLIENT_USER_ASSOCIATION_FIELDS}
       }
-      ccUsers {
-        user
+      listInfo {
+        totalCount
+        page
+        pageSize
+        hasMore
       }
-      bccUsers {
-        user
+    }
+  }
+`;
+
+export const CREATE_CLIENT_USER_ASSOCIATIONS = /* GraphQL */ `
+  mutation CreateClientUserAssociations($input: [CreateClientUserAssociationInput!]!) {
+    createClientUserAssociations(input: $input) {
+      ${CLIENT_USER_ASSOCIATION_FIELDS}
+    }
+  }
+`;
+
+export const UPDATE_CLIENT_USER_ASSOCIATIONS = /* GraphQL */ `
+  mutation UpdateClientUserAssociations($input: [UpdateClientUserAssociationInput!]!) {
+    updateClientUserAssociations(input: $input) {
+      ${CLIENT_USER_ASSOCIATION_FIELDS}
+    }
+  }
+`;
+
+/** Returns the deleted associations' bare IDs. */
+export const DELETE_CLIENT_USER_ASSOCIATIONS = /* GraphQL */ `
+  mutation DeleteClientUserAssociations($input: [ClientUserAssociationIdentifierInput!]!) {
+    deleteClientUserAssociations(input: $input)
+  }
+`;
+
+// ---- Reference lists (bare arrays, no pagination) --------------------------
+
+/** No `input` argument, no pagination wrapper — returns a bare array. */
+export const GET_CLIENT_STAGE_LIST = /* GraphQL */ `
+  query GetClientStageList {
+    getClientStageList {
+      stageId
+      name
+      constant
+      statuses {
+        statusId
+        name
       }
-      attachments {
-        fileName
-        originalFileName
-        fileSize
+    }
+  }
+`;
+
+/** No `input` argument, no pagination wrapper — returns a bare array. */
+export const GET_REQUESTER_ROLE_LIST = /* GraphQL */ `
+  query GetRequesterRoleList {
+    getRequesterRoleList {
+      roleId
+      name
+      description
+      roleType {
+        roleTypeId
+        name
       }
-      type
+      roleFeatureList {
+        feature
+        operationList
+      }
+      roleUserList {
+        userId
+        name
+      }
+    }
+  }
+`;
+
+/** @deprecated on SuperOps' schema — use `getFields` instead. No `input` argument, no pagination wrapper — returns a bare array. */
+export const GET_PRIORITY_LIST = /* GraphQL */ `
+  query GetPriorityList {
+    getPriorityList {
+      id
+      name
+      colorCode
+    }
+  }
+`;
+
+/** @deprecated on SuperOps' schema — use `getFields` instead. No `input` argument, no pagination wrapper — returns a bare array. */
+export const GET_IMPACT_LIST = /* GraphQL */ `
+  query GetImpactList {
+    getImpactList {
+      id
+      name
+    }
+  }
+`;
+
+/** @deprecated on SuperOps' schema — use `getFields` instead. No `input` argument, no pagination wrapper — returns a bare array. */
+export const GET_RESOLUTION_CODE_LIST = /* GraphQL */ `
+  query GetResolutionCodeList {
+    getResolutionCodeList {
+      id
+      name
+      description
+    }
+  }
+`;
+
+/** @deprecated on SuperOps' schema — use `getFields` instead. No `input` argument, no pagination wrapper — returns a bare array. */
+export const GET_CAUSE_LIST = /* GraphQL */ `
+  query GetCauseList {
+    getCauseList {
+      id
+      name
+      subCauses {
+        id
+        name
+        description
+      }
+    }
+  }
+`;
+
+/** @deprecated on SuperOps' schema — use `getFields` instead. No `input` argument, no pagination wrapper — returns a bare array. */
+export const GET_STATUS_LIST = /* GraphQL */ `
+  query GetStatusList {
+    getStatusList {
+      id
+      name
+      description
+    }
+  }
+`;
+
+/** No `input` argument, no pagination wrapper — returns a bare array. */
+export const GET_TECHNICIAN_GROUP_LIST = /* GraphQL */ `
+  query GetTechnicianGroupList {
+    getTechnicianGroupList {
+      groupId
+      name
+    }
+  }
+`;
+
+/** No `input` argument, no pagination wrapper — returns a bare array. Each entry is a named list of holidays, not a single holiday. */
+export const GET_HOLIDAY_LIST = /* GraphQL */ `
+  query GetHolidayList {
+    getHolidayList {
+      id
+      name
+    }
+  }
+`;
+
+/** No `input` argument, no pagination wrapper — returns a bare array. */
+export const GET_PAYMENT_METHOD_LIST = /* GraphQL */ `
+  query GetPaymentMethodList {
+    getPaymentMethodList {
+      paymentMethodId
+      paymentMethodName
+    }
+  }
+`;
+
+/** No `input` argument, no pagination wrapper — returns a bare array. */
+export const GET_PAYMENT_TERM_LIST = /* GraphQL */ `
+  query GetPaymentTermList {
+    getPaymentTermList {
+      paymentTermId
+      paymentTermName
+      paymentTermValue
     }
   }
 `;
