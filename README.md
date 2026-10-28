@@ -11,32 +11,33 @@ const data = await superops.query(`query { getTaskList { id } }`);
 
 What's wrapped as a typed method today
 
-| Entity | Read | Write 
+| Entity | Read | Write |
 |---|---|---|
-| Client | `iterateClients`, `getClient` | — 
-| ClientUser | `iterateClientUsers`, `getClientUser` | — |
-| ClientSite | `iterateClientSites`, `getClientSite` | — |
+| Client | `iterateClients`, `getClient` | `createClient`, `updateClient` |
+| ClientUser | `iterateClientUsers`, `getClientUser` | `createClientUser`, `updateClientUser` |
+| ClientSite | `iterateClientSites`, `getClientSite` | `createClientSite`, `updateClientSite` |
 | ClientUserAssociation | `iterateClientUserAssociations` | `createClientUserAssociations`, `updateClientUserAssociations`, `deleteClientUserAssociations` |
 | CustomField | `listClientCustomFields`, `getClientCustomField` | — |
-| ClientContract | `iterateClientContracts`, `getClientContract` | `updateClientContract` |
-| WorklogEntry | `iterateWorklogEntries` | — | 
-| ServiceCatalogItem | `iterateServiceCatalogItems`, `getServiceCatalogItem` | `createServiceCatalogItem` | 
+| Field (generic custom fields, any module) | — | `createField`, `updateField` |
+| ClientContract | `iterateClientContracts`, `getClientContract` | `createClientContract`, `updateClientContract` |
+| WorklogEntry | `iterateWorklogEntries` | `createWorklogEntries`, `updateWorklogEntry` |
+| ServiceCatalogItem | `iterateServiceCatalogItems`, `getServiceCatalogItem` | `createServiceCatalogItem`, `updateServiceCatalogItem` |
 | ServiceCategory | `listServiceCategories` | — |
-| Invoice | `iterateInvoices`, `getInvoicesPage`, `getInvoice` | `createInvoice` | 
+| Invoice | `iterateInvoices`, `getInvoicesPage`, `getInvoice` | `createInvoice`, `updateInvoice` |
 | InvoiceItem | `iterateInvoiceItems` | — |
-| Ticket | `iterateTickets`, `getTicketsPage` | — |
+| Ticket | `iterateTickets`, `getTicketsPage` | `createTicket`, `updateTicket` |
 | Note (ticket notes) ⚠️deprecated | `listTicketNotes` | `createTicketNote` |
 | TicketConversation | `listTicketConversations` | `createTicketConversation` |
 | TicketCustomField ⚠️deprecated | `listTicketCustomFields`, `getTicketCustomField` | — |
 | Technician | `iterateTechnicians` | — |
-| Tax | `iterateTaxes`, `getTax` | — |
+| Tax | `iterateTaxes`, `getTax` | `createTax` |
 | WorkStatus | `listWorkStatuses` | — |
 | Urgency | `listUrgencies` | — |
 | Category | `listCategories` | — |
 | SLA | `listSLAs` | — |
 | OfferedItem | `iterateOfferedItems` | — |
-| Task | `iterateTasks` | — |
-| ServiceItem ⚠️ | `iterateServiceItems`, `getServiceItem` | — |
+| Task | `iterateTasks` | `createTask` |
+| ServiceItem ⚠️ | `iterateServiceItems`, `getServiceItem` | `createServiceItem` |
 | Reference lists — ClientStage, Role (requester), TechnicianGroup, HolidayList, PaymentMethod, PaymentTerm | `listClientStages`, `listRequesterRoles`, `listTechnicianGroups`, `listHolidayLists`, `listPaymentMethods`, `listPaymentTerms` | — |
 | Reference lists (⚠️deprecated on SuperOps' schema — use `getFields`/`getField` instead) — Priority, Impact, ResolutionCode, Cause, Status | `listPriorities`, `listImpacts`, `listResolutionCodes`, `listCauses`, `listStatuses` | — |
 
